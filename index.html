@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LPT</title>
+  <meta name="description" content="Mon recueil de trucs et astuces, avec une astuce du jour.">
+  <!-- Couleur de la barre du téléphone (mise à jour par le script ci-dessous) -->
+  <meta name="theme-color" content="#f5f4fa">
+  <script>
+    // Thème choisi sur cet appareil (Réglages → Thème) : auto, clair ou sombre.
+    // On l'applique AVANT l'affichage de la page, pour éviter un « flash » blanc.
+    // En « auto », on suit le réglage du téléphone/PC, même s'il change pendant qu'on utilise l'appli.
+    (function () {
+      var choix = "auto";
+      try { choix = (JSON.parse(localStorage.getItem("lpt-reglages")) || {}).theme || "auto"; } catch (e) {}
+      var sombreTel = matchMedia("(prefers-color-scheme: dark)");
+      function appliquer() {
+        var theme = choix === "auto" ? (sombreTel.matches ? "sombre" : "clair") : choix;
+        document.documentElement.dataset.theme = theme;
+        document.querySelector('meta[name="theme-color"]').content = theme === "sombre" ? "#171c24" : "#f5f4fa";
+      }
+      appliquer();
+      sombreTel.addEventListener("change", appliquer);
+      window.appliquerTheme = function (nouveau) { choix = nouveau; appliquer(); };
+    })();
+  </script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icones/icone-192.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- Les icônes viennent de la planche icones/icones.svg :
+     <svg class="ic"><use href="icones/icones.svg#nom"></use></svg> -->
+
+<!-- ============ ÉCRAN DE CONNEXION ============ -->
+<section id="ecran-connexion" class="ecran" hidden>
+  <div class="connexion">
+    <img src="icones/icone.svg" alt="" width="72" height="72">
+    <h1>LPT</h1>
+    <button id="btn-connexion" class="btn plein">Se connecter avec Google</button>
+    <p id="connexion-erreur" class="erreur" hidden></p>
+  </div>
+</section>
+
+<!-- ============ ÉCRAN PRINCIPAL : astuce du jour + recueil ============ -->
+<section id="ecran-accueil" class="ecran" hidden>
+  <header class="barre">
+    <h1 class="logo">LPT</h1>
+    <button class="btn-icone" id="btn-ajouter" aria-label="Ajouter une astuce"><svg class="ic"><use href="icones/icones.svg#plus"></use></svg></button>
+    <button class="btn-icone" data-aller="reglages" aria-label="Réglages"><svg class="ic"><use href="icones/icones.svg#settings"></use></svg></button>
+  </header>
+  <div id="du-jour"></div>
+  <div class="recherche">
+    <svg class="ic"><use href="icones/icones.svg#search"></use></svg>
+    <input id="recherche" type="search" placeholder="Rechercher" autocomplete="off" aria-label="Rechercher">
+  </div>
+  <div id="filtres" class="filtres"></div>
+  <div id="liste" class="liste"></div>
+</section>
+
+<!-- ============ RÉGLAGES ============ -->
+<section id="ecran-reglages" class="ecran" hidden>
+  <header class="barre">
+    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
+    <h1 class="titre">Réglages</h1>
+  </header>
+  <div class="reglages">
+    <h2>Compte</h2>
+    <div class="groupe">
+      <div class="ligne-r"><span id="compte-info"></span></div>
+      <div class="ligne-r"><span class="synchro"><svg class="ic"><use href="icones/icones.svg#cloud-check"></use></svg><span class="synchro-texte">Synchronisé</span></span></div>
+      <button class="ligne-r cliquable" id="btn-deconnexion"><svg class="ic"><use href="icones/icones.svg#logout"></use></svg><span>Se déconnecter</span></button>
+    </div>
+    <h2>Apparence</h2>
+    <div class="groupe">
+      <button class="ligne-r cliquable" data-aller="theme"><span>Thème</span><span class="valeur" id="theme-actuel"></span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></button>
+      <div class="ligne-r"><span>Animations</span>
+        <div id="choix-animations" class="segments">
+          <button data-anim-choix="completes">Complètes</button>
+          <button data-anim-choix="simples">Simples</button>
+        </div>
+      </div>
+    </div>
+    <h2>Catégories</h2>
+    <div class="groupe">
+      <button class="ligne-r cliquable" data-aller="categories"><span id="resume-categories" class="resume"></span><span class="valeur">Voir…</span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></button>
+    </div>
+    <h2>Excel</h2>
+    <div class="groupe deux">
+      <button class="btn" id="btn-export"><svg class="ic"><use href="icones/icones.svg#download"></use></svg>Exporter</button>
+      <button class="btn" id="btn-import"><svg class="ic"><use href="icones/icones.svg#upload"></use></svg>Importer</button>
+      <input type="file" id="fichier-import" accept=".xlsx" hidden>
+    </div>
+    <p class="version"><span id="version"></span></p>
+  </div>
+</section>
+
+<!-- ============ THÈME ============ -->
+<section id="ecran-theme" class="ecran" hidden>
+  <header class="barre">
+    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
+    <h1 class="titre">Thème</h1>
+  </header>
+  <div class="reglages">
+    <div id="choix-theme" class="groupe">
+      <button class="ligne-r cliquable" data-theme-choix="auto"><span>Auto</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
+      <button class="ligne-r cliquable" data-theme-choix="clair"><span>Clair</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
+      <button class="ligne-r cliquable" data-theme-choix="sombre"><span>Sombre</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CATÉGORIES ============ -->
+<section id="ecran-categories" class="ecran" hidden>
+  <header class="barre">
+    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
+    <h1 class="titre">Catégories</h1>
+  </header>
+  <div class="reglages">
+    <div id="liste-categories" class="groupe"></div>
+    <button class="btn" id="btn-ajout-categorie"><svg class="ic"><use href="icones/icones.svg#plus"></use></svg>Ajouter</button>
+  </div>
+</section>
+
+<!-- Fenêtres (fiche d'une astuce, formulaire) : remplies par app.js -->
+<div id="voile" class="voile" hidden></div>
+
+<!-- Petit message en bas de l'écran (avec « Annuler » après une suppression) -->
+<div id="toast" class="toast" hidden>
+  <span id="toast-texte"></span>
+  <button id="toast-annuler">Annuler</button>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

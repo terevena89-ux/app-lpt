@@ -11,15 +11,23 @@
     // Thème choisi sur cet appareil (Réglages → Thème) : auto, clair ou sombre.
     // On l'applique AVANT l'affichage de la page, pour éviter un « flash » blanc.
     // En « auto », on suit le réglage du téléphone/PC, même s'il change pendant qu'on utilise l'appli.
+    // Même chose pour le style (Réglages → Style) : « journal » (par défaut) ou « pioche ».
     (function () {
-      var choix = "auto";
-      try { choix = (JSON.parse(localStorage.getItem("lpt-reglages")) || {}).theme || "auto"; } catch (e) {}
+      var choix = "auto", style = "journal";
+      try {
+        var r = JSON.parse(localStorage.getItem("lpt-reglages")) || {};
+        choix = r.theme || "auto"; style = r.style || "journal";
+      } catch (e) {}
+      document.documentElement.dataset.style = style;
       var sombreTel = matchMedia("(prefers-color-scheme: dark)");
       function appliquer() {
         var theme = choix === "auto" ? (sombreTel.matches ? "sombre" : "clair") : choix;
+        var journal = document.documentElement.dataset.style === "journal";
         document.documentElement.dataset.theme = theme;
-        document.querySelector('meta[name="theme-color"]').content = theme === "sombre" ? "#171c24" : "#FBF8F2";
+        document.querySelector('meta[name="theme-color"]').content =
+          theme === "sombre" ? (journal ? "#121318" : "#171c24") : (journal ? "#FFFFFF" : "#FBF8F2");
       }
+      window.appliquerStyle = function (nouveau) { document.documentElement.dataset.style = nouveau; appliquer(); };
       appliquer();
       sombreTel.addEventListener("change", appliquer);
       window.appliquerTheme = function (nouveau) { choix = nouveau; appliquer(); };
@@ -29,7 +37,7 @@
   <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icones/icone-192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&family=Inter+Tight:ital,wght@0,500;0,700;0,800;0,900;1,900&family=IBM+Plex+Serif:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -59,6 +67,8 @@
     <input id="recherche" type="search" placeholder="Rechercher" autocomplete="off" aria-label="Rechercher">
   </div>
   <div id="filtres" class="filtres"></div>
+  <!-- Titre de la section ouverte (style Journal seulement) : « Tout », « Favoris », « Cuisine »… -->
+  <div id="titre-section" class="titre-section"></div>
   <div id="liste" class="liste"></div>
 </section>
 
@@ -77,6 +87,12 @@
     </div>
     <div class="sect">Apparence</div>
     <div class="groupe">
+      <div class="reg"><span>Style</span>
+        <div id="choix-style" class="seg">
+          <button data-style-choix="journal">Journal</button>
+          <button data-style-choix="pioche">Pioche</button>
+        </div>
+      </div>
       <button class="reg" data-aller="theme"><span>Thème</span><span class="val"><span id="theme-actuel"></span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></span></button>
       <div class="reg"><span>Animations</span>
         <div id="choix-animations" class="seg">
@@ -126,6 +142,7 @@
   <button id="toast-annuler">Annuler</button>
 </div>
 
+<script src="champs-mobile.js" defer></script>
 <script type="module" src="app.js"></script>
 </body>
 </html>

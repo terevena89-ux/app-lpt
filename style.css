@@ -373,3 +373,135 @@ button.reg:active { background: var(--creux); }
 /* Moins d'animations : réglage « Simples » ou réglage du téléphone */
 [data-anim="simples"] *, [data-anim="simples"] *::before { animation: none !important; transition: none !important; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* Petit panneau des listes déroulantes sur téléphone (module champs-mobile.js) :
+   il reprend les couleurs de l'appli, et suit donc le thème clair / sombre. */
+.pm-voile { --pm-fond: var(--carte); --pm-texte: var(--texte); --pm-discret: var(--discret); --pm-trait: var(--fin); --pm-accent: var(--accent); --pm-champ: var(--creux); --pm-appui: var(--accent-doux); --pm-police: var(--police); }
+
+/* Titre de section : n'existe que dans le style Journal (voir plus bas) */
+.titre-section { display: none; }
+
+/* =========================================================
+   v0.3.0 : style « Journal » (par défaut), comme le thème Journal de Quoi faire :
+   coins carrés, traits noirs, titres très gras, jaune fluo pour ce qui est choisi,
+   et des onglets façon carnet / OneNote : une couleur par section en liseré.
+   Le style « Pioche » (v0.2) reste au choix dans Réglages → Style.
+   Tout ce bloc ne s'applique que si la page porte data-style="journal".
+   ========================================================= */
+:root[data-style="journal"] {
+  --fond: #FFFFFF;
+  --carte: #FFFFFF;
+  --creux: #F4F4F6;
+  --texte: #14161F;
+  --titre: #14161F;
+  --discret: #5C5F6B;
+  --fin: rgba(20, 22, 31, .13);
+  --accent: #776CDB;
+  --accent-doux: #EFECFB;
+  --accent-trait: #CFC9EE;
+  --accent-fonce: #4A40A8;
+  --sur-accent: #FFFFFF;
+  --cadre: #14161F;          /* traits noirs */
+  --ombre-carte: #776CDB;    /* petite ombre décalée lavande */
+  --jaune: #FFEC3A;          /* jaune fluo : onglet et boutons choisis */
+  --sur-jaune: #14161F;
+  --fav: #14161F;
+  --fav-doux: #FFEC3A;
+  --titres: "Inter Tight", "Inter", Helvetica, Arial, sans-serif;
+  --police: "Inter Tight", "Inter", Helvetica, Arial, sans-serif;
+  --serif: "IBM Plex Serif", Georgia, serif;
+}
+:root[data-style="journal"][data-theme="sombre"] {
+  --fond: #121318;
+  --carte: #17181E;
+  --creux: #1E2028;
+  --texte: #F2F1EC;
+  --titre: #F2F1EC;
+  --discret: #A2A4AD;
+  --fin: rgba(255, 255, 255, .1);
+  --accent: #B3A9F5;
+  --accent-doux: #2C2850;
+  --accent-trait: #4D4689;
+  --accent-fonce: #DCD6FF;
+  --sur-accent: #1A1640;
+  --cadre: #F2F1EC;          /* en sombre, les traits deviennent clairs */
+  --ombre-carte: #4D4689;
+  --fav: #F2F1EC;
+}
+
+/* Coins carrés partout, sauf les ronds (boutons du panneau d'ajout, choix du thème) */
+[data-style="journal"] * { border-radius: 0 !important; }
+[data-style="journal"] .rond, [data-style="journal"] .radio, [data-style="journal"] .radio::after { border-radius: 50% !important; }
+
+/* En-tête : trait noir dessous, titre très gras en italique, boutons carrés à contour */
+[data-style="journal"] .barre { border-bottom: 1px solid var(--cadre); padding-bottom: 8px; }
+[data-style="journal"] .logo { font: italic 900 23px/1 var(--titres); letter-spacing: -.04em; }
+[data-style="journal"] .sous-titre { font-size: 11px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+[data-style="journal"] .barre .btn-icone { border: 1px solid var(--cadre); width: 34px; height: 34px; margin-left: 4px; color: var(--texte); }
+
+/* Écran principal rangé comme un carnet : onglets, titre de section, (pioche), recherche, liste */
+[data-style="journal"] #ecran-accueil { display: flex; flex-direction: column; }
+[data-style="journal"] #ecran-accueil > .barre { order: 0; }
+[data-style="journal"] #filtres { order: 1; }
+[data-style="journal"] #titre-section { order: 2; }
+[data-style="journal"] #du-jour { order: 3; }
+[data-style="journal"] #ecran-accueil > .recherche { order: 4; }
+[data-style="journal"] #liste { order: 5; }
+/* La pioche du jour ne s'affiche que dans l'onglet « Tout » */
+[data-style="journal"] #ecran-accueil[data-filtre="autre"] #du-jour { display: none; }
+
+/* Onglets : cases collées, liseré de la couleur de la section en haut, onglet choisi en jaune */
+[data-style="journal"] .filtres { padding: 0; gap: 0; border-bottom: 1px solid var(--cadre); }
+[data-style="journal"] .filtres .puce {
+  height: 38px; padding: 0 11px;
+  border: 0; border-right: 1px solid var(--cadre); border-top: 4px solid var(--k);
+  background: var(--carte); color: var(--texte); font-size: 13px; font-weight: 700;
+}
+[data-style="journal"] .filtres .puce[aria-pressed="true"] { background: var(--jaune); color: var(--sur-jaune); border-top-color: var(--k); }
+
+/* Titre de la section ouverte : très gras, posé sur une barre noire épaisse */
+[data-style="journal"] .titre-section {
+  display: flex; align-items: center; gap: 8px;
+  margin: 12px 12px 10px; padding-bottom: 4px; border-bottom: 5px solid var(--cadre);
+}
+[data-style="journal"] .titre-section h2 { margin: 0; font: 900 30px/1 var(--titres); letter-spacing: -.035em; color: var(--titre); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pastille { flex: none; width: 14px; height: 14px; background: var(--k); }
+
+/* Pioche du jour : carte droite, trait noir, petite ombre décalée lavande */
+[data-style="journal"] .jour { margin: 0 12px 12px; border: 1px solid var(--cadre); box-shadow: 3px 3px 0 var(--ombre-carte); transform: none; }
+[data-style="journal"] .jour .bandeau { background: none; border-bottom: 1px solid var(--fin); }
+[data-style="journal"] .jour h2 { font: 800 19px/1.15 var(--titres); letter-spacing: -.02em; }
+[data-anim="completes"][data-style="journal"] .jour.pioche { animation-name: piocher-droit; }
+@keyframes piocher-droit {
+  from { transform: perspective(700px) rotateY(80deg); opacity: 0; }
+  to   { transform: perspective(700px) rotateY(0); opacity: 1; }
+}
+
+/* Textes courants (extraits, texte de l'astuce) à empattements, comme le Journal */
+[data-style="journal"] .jour .texte, [data-style="journal"] .ligne .extrait, [data-style="journal"] .fiche .texte { font-family: var(--serif); }
+
+/* Boutons : simples contours noirs ; choisi = jaune ; deux boutons côte à côte collés */
+[data-style="journal"] .btn { border: 1px solid var(--cadre); background: var(--carte); color: var(--texte); }
+[data-style="journal"] .btn.plein,
+[data-style="journal"] .btn[aria-pressed="true"],
+[data-style="journal"] .btn[data-favori][aria-pressed="true"] { background: var(--jaune); border-color: var(--cadre); color: var(--sur-jaune); }
+[data-style="journal"] .actions { gap: 0 !important; }
+[data-style="journal"] .actions .btn + .btn { border-left: 0; }
+
+/* Recherche et liste */
+[data-style="journal"] .recherche { border: 1px solid var(--cadre); }
+[data-style="journal"] .ligne .ic.fav { color: var(--cadre); fill: var(--jaune); }
+
+/* Fenêtres (fiche, Réglages, panneau d'ajout) : trait noir + ombre décalée */
+[data-style="journal"] .fenetre-c, [data-style="journal"] .fenetre { border: 1px solid var(--cadre); box-shadow: 4px 4px 0 var(--ombre-carte); }
+[data-style="journal"] .groupe { border-color: var(--cadre); background: var(--carte); }
+[data-style="journal"] .seg { background: none; border: 1px solid var(--cadre); padding: 0; gap: 0; }
+[data-style="journal"] .seg button + button { border-left: 1px solid var(--cadre); }
+[data-style="journal"] .seg button[aria-pressed="true"] { background: var(--texte); color: var(--fond); box-shadow: none; }
+[data-style="journal"] .t { background: var(--creux); color: var(--texte); }
+[data-style="journal"] .t.fav { background: var(--jaune); color: var(--sur-jaune); }
+[data-style="journal"] .rond { border-color: var(--cadre); color: var(--texte); }
+[data-style="journal"] .rond[aria-pressed="true"] { background: var(--jaune); border-color: var(--cadre); color: var(--sur-jaune); }
+[data-style="journal"] .ex-panneau input { border-color: var(--cadre); }
+[data-style="journal"] .vide { border: 1px dashed var(--cadre); }
+[data-style="journal"] .toast button { color: var(--jaune); }

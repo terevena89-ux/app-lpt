@@ -25,7 +25,7 @@ import { chargerExcelJS, ajouterFeuille, telechargerClasseur, lireClasseur, lire
 
 // ---------- 1. Réglages de base et données ----------
 
-const VERSION = "v0.2.0";
+const VERSION = "v0.3.0";
 const NOM_APPLI = "app-lpt";   // nom du dossier dans Firestore et des fichiers Excel
 
 // Une astuce = { id, titre, texte, cat, lien, image, photo, favori, connue, vue, cree }
@@ -52,7 +52,8 @@ let donnees = { categories: structuredClone(CATEGORIES_DEPART), jour: null };
 
 // Réglages de ressenti, gardés sur CET appareil seulement (pas synchronisés)
 const CLE_REGLAGES = "lpt-reglages";
-let reglages = { theme: "auto", animations: "completes" };
+// style : « journal » (onglets façon carnet, comme le thème Journal de Quoi faire) ou « pioche » (v0.2)
+let reglages = { theme: "auto", animations: "completes", style: "journal" };
 try { Object.assign(reglages, JSON.parse(localStorage.getItem(CLE_REGLAGES)) || {}); } catch (e) { /* valeurs par défaut */ }
 function changerReglage(nom, valeur) {
   reglages[nom] = valeur;
@@ -76,6 +77,15 @@ const lienValide = u => /^https?:\/\/\S+$/i.test(String(u || "").trim()) ? Strin
 const domaine = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return u; } };
 
 const SANS_CAT = { id: "", nom: "Sans catégorie", emoji: "•" };
+// Couleur de chaque section (onglets du style Journal) : « Tout » en lavande, « Favoris » en carotte,
+// puis les catégories dans l'ordre, avec ces couleurs vives qui recommencent après la 8e.
+const COULEURS_SECTIONS = ["#E2574C", "#3D7FC4", "#3F8F55", "#8A55B8", "#2E9C8F", "#D9A21C", "#C2487A", "#5B6B8C"];
+function couleurSection(id) {
+  if (id === "tout") return "#776CDB";
+  if (id === "favoris") return "#D9762B";
+  const i = donnees.categories.findIndex(c => c.id === id);
+  return i < 0 ? "#8A8A8A" : COULEURS_SECTIONS[i % COULEURS_SECTIONS.length];
+}
 const categorie = id => donnees.categories.find(c => c.id === id) || SANS_CAT;
 
 // Remet d'aplomb une astuce venue d'ailleurs (Firebase, Excel, ancienne version...)
@@ -398,8 +408,15 @@ function afficherAccueil() {
     ...donnees.categories.map(c => ({ id: c.id, html: echapper(c.emoji) + (filtre === c.id ? " " + echapper(c.nom) : ""), titre: c.nom }))
   ];
   if (!puces.some(p => p.id === filtre)) filtre = "tout";
+  // Chaque puce porte sa couleur de section (--k) : en style Journal, elle devient
+  // le liseré de l'onglet, comme les intercalaires d'un carnet.
   $("filtres").innerHTML = puces.map(p =>
-    `<button class="puce" data-filtre="${echapper(p.id)}" aria-pressed="${p.id === filtre}" ${p.titre ? `title="${echapper(p.titre)}" aria-label="${echapper(p.titre)}"` : ""}>${p.html}</button>`).join("");
+    `<button class="puce" data-filtre="${echapper(p.id)}" aria-pressed="${p.id === filtre}" style="--k:${couleurSection(p.id)}" ${p.titre ? `title="${echapper(p.titre)}" aria-label="${echapper(p.titre)}"` : ""}>${p.html}</button>`).join("");
+  // Titre de la section ouverte (affiché seulement en style Journal)
+  const nomSection = filtre === "tout" ? "Tout" : filtre === "favoris" ? "Favoris" : categorie(filtre).nom;
+  $("titre-section").innerHTML = `<span class="pastille" style="--k:${couleurSection(filtre)}"></span><h2>${echapper(nomSection)}</h2>`;
+  // La pioche du jour ne s'affiche que dans « Tout » en style Journal (règle dans style.css)
+  $("ecran-accueil").dataset.filtre = filtre === "tout" ? "tout" : "autre";
 
   // --- Liste : les plus récentes d'abord ---
   const mots = simplifier(recherche).split(/\s+/).filter(Boolean);
@@ -577,6 +594,7 @@ function afficherReglages() {
   $("version").textContent = VERSION;
   $("theme-actuel").textContent = NOMS_THEME[reglages.theme] || "Auto";
   document.querySelectorAll("[data-anim-choix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.animChoix === reglages.animations));
+  document.querySelectorAll("[data-style-choix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.styleChoix === reglages.style));
   $("resume-categories").textContent = donnees.categories.map(c => c.emoji).join(" ");
   $("btn-deconnexion").hidden = MODE_DEMO;
   majSynchro();
@@ -766,6 +784,14 @@ $("choix-animations").addEventListener("click", e => {
   if (!b) return;
   changerReglage("animations", b.dataset.animChoix);
   appliquerAnimations();
+  afficherReglages();
+});
+// Choix du style (Journal / Pioche) : gardé sur cet appareil, appliqué tout de suite
+$("choix-style").addEventListener("click", e => {
+  const b = e.target.closest("[data-style-choix]");
+  if (!b) return;
+  changerReglage("style", b.dataset.styleChoix);
+  window.appliquerStyle(b.dataset.styleChoix);
   afficherReglages();
 });
 

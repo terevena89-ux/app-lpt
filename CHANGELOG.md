@@ -1,5 +1,12 @@
 # LPT — journal des nouveautés
 
+## 0.3.0 — 2026-11-07
+- Nouveau style « Journal » (par défaut), comme le thème Journal de Quoi faire : coins carrés, traits noirs, titres très gras, jaune fluo pour ce qui est choisi.
+- Onglets façon carnet / OneNote : « Tout », « Favoris » et une couleur par catégorie en liseré ; grand titre de la section ouverte. La pioche du jour est dans l'onglet « Tout ».
+- Réglages → Style : Journal ou Pioche (le look de la v0.2), gardé sur chaque appareil.
+- Correctif : plus de barre de remplissage automatique (clé / carte / adresse) au-dessus du clavier dans les cases de saisie.
+- Sur téléphone, les listes déroulantes s'ouvrent dans un petit panneau en bas (coche sur le choix actuel, case « Chercher… » au-delà de 10 choix). Sur PC, rien ne change.
+
 ## 0.2.0 — 2026-11-07
 - Nouveau look « carte à piocher », de la même famille que Foodix (mêmes polices, lignes serrées, petits boutons).
 - L'astuce du jour devient une carte de jeu un peu penchée (« Pioche du jour »), qui se retourne quand elle apparaît.

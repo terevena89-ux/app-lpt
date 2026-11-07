@@ -4,7 +4,7 @@
 // même sans réseau. (Les données, elles, sont gérées par Firebase.)
 // À CHAQUE NOUVELLE VERSION : changer le numéro ci-dessous.
 // =========================================================
-const CACHE = "lpt-v0.1.1";
+const CACHE = "lpt-v0.2.0";
 
 // Fichiers de l'appli à garder dès l'installation
 const FICHIERS = [
@@ -37,8 +37,8 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Bibliothèques (Firebase, ExcelJS) : versions fixes, donc on peut garder la copie
-  if (url.hostname === "www.gstatic.com" || url.hostname === "cdnjs.cloudflare.com") {
+  // Bibliothèques (Firebase, ExcelJS) et polices : versions fixes, donc on peut garder la copie
+  if (["www.gstatic.com", "cdnjs.cloudflare.com", "fonts.googleapis.com", "fonts.gstatic.com"].includes(url.hostname)) {
     e.respondWith(
       caches.match(req).then(copie => copie || fetch(req).then(rep => {
         const clone = rep.clone();

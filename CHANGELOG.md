@@ -1,5 +1,16 @@
 # LPT — journal des nouveautés
 
+## 0.2.0 — 2026-11-07
+- Nouveau look « carte à piocher », de la même famille que Foodix (mêmes polices, lignes serrées, petits boutons).
+- L'astuce du jour devient une carte de jeu un peu penchée (« Pioche du jour »), qui se retourne quand elle apparaît.
+- La liste montre le début du texte sous chaque titre.
+- Favori en couleur carotte, comme dans Foodix.
+- En-tête avec la date du jour en petit sous « LPT ».
+- Fiche d'une astuce dans une fenêtre au centre : vignette de l'image (toucher pour l'agrandir), étiquettes sous le titre.
+- Réglages, Thème et Catégories dans une fenêtre au centre, présentés comme Foodix.
+- Petit message du bas en forme de pilule, comme Foodix.
+- Palette « lavande et crème » : papier crème, titres en encre bleu nuit, lavande et carotte (les couleurs de l'icône).
+
 ## 0.1.1 — 2026-11-07
 - Nouveau panneau d'ajout « express » : petit panneau en bas, titre et texte, puis boutons ronds (catégorie, lien, photo, image du web).
 - Plus de barre « adresses / paiement / mots de passe » au-dessus du clavier pendant la saisie.

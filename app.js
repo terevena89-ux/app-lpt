@@ -25,7 +25,7 @@ import { chargerExcelJS, ajouterFeuille, telechargerClasseur, lireClasseur, lire
 
 // ---------- 1. Réglages de base et données ----------
 
-const VERSION = "v0.1.1";
+const VERSION = "v0.2.0";
 const NOM_APPLI = "app-lpt";   // nom du dossier dans Firestore et des fichiers Excel
 
 // Une astuce = { id, titre, texte, cat, lien, image, photo, favori, connue, vue, cree }
@@ -286,23 +286,34 @@ let aNavigue = false; // a-t-on changé d'écran depuis l'ouverture ?
 function aller(adresse) { aNavigue = true; location.hash = adresse; }
 function retour() { if (aNavigue) history.back(); else location.replace("#"); }
 
+// Réglages, Thème et Catégories sont des fenêtres posées sur l'écran principal :
+// quand l'une d'elles est ouverte, l'écran principal reste visible derrière.
+const MODALES = ["reglages", "theme", "categories"];
 function montrer(nom) {
-  document.querySelectorAll(".ecran").forEach(e => { e.hidden = e.id !== "ecran-" + nom; });
-  if (ecranActuel !== nom) window.scrollTo(0, 0);
+  document.querySelectorAll(".ecran").forEach(e => {
+    const n = e.id.slice(6); // « ecran-reglages » -> « reglages »
+    e.hidden = !(n === nom || (n === "accueil" && MODALES.includes(nom)));
+  });
+  if (ecranActuel !== nom && !MODALES.includes(nom) && !MODALES.includes(ecranActuel)) window.scrollTo(0, 0);
   ecranActuel = nom;
 }
 
 // Les fenêtres (fiche, formulaire) s'ouvrent par-dessus l'accueil
 const fenetreOuverte = () => !$("voile").hidden;
-function fermerVoile() { $("voile").hidden = true; $("voile").innerHTML = ""; formEnCours = null; }
+function fermerVoile() { $("voile").hidden = true; $("voile").innerHTML = ""; $("voile").className = "voile"; formEnCours = null; imageGrande = false; }
 
 function router() {
   if (!MODE_DEMO && !uid) return; // pas encore connecté
   const h = decodeURIComponent(location.hash.slice(1));
   menuOuvert = false;
-  if (h === "reglages") { fermerVoile(); afficherReglages(); montrer("reglages"); }
-  else if (h === "theme") { fermerVoile(); afficherTheme(); montrer("theme"); }
-  else if (h === "categories") { fermerVoile(); afficherCategories(); montrer("categories"); }
+  if (MODALES.includes(h)) {
+    fermerVoile();
+    afficherAccueil();
+    if (h === "reglages") afficherReglages();
+    else if (h === "theme") afficherTheme();
+    else afficherCategories();
+    montrer(h);
+  }
   else {
     afficherAccueil(); montrer("accueil");
     if (h.startsWith("fiche=")) {
@@ -347,15 +358,23 @@ const htmlBoutons = a => `
   </div>`;
 const meta = a => { const c = categorie(a.cat); return `${echapper(c.emoji)} ${echapper(c.nom)}`; };
 
+// La carte du jour se « retourne » une seule fois, quand elle apparaît
+// (pas à chaque fois que l'écran se redessine)
+let carteDejaPiochee = "";
 function afficherAccueil() {
-  // --- Carte « Astuce du jour » ---
+  // --- Carte « Pioche du jour » (façon carte de jeu) ---
   const a = astuceDuJour();
   if (a) {
-    $("du-jour").innerHTML = `<article class="jour">
+    const piocher = carteDejaPiochee !== a.id;
+    carteDejaPiochee = a.id;
+    $("du-jour").innerHTML = `<article class="jour ${piocher ? "pioche" : ""}">
+      <div class="bandeau lire" data-fiche="${a.id}">
+        <span class="h4">Pioche du jour</span>
+        <span class="emoji" title="${echapper(categorie(a.cat).nom)}">${echapper(categorie(a.cat).emoji)}</span>
+      </div>
       <div class="lire" data-fiche="${a.id}">${htmlImage(a)}</div>
       <div class="corps">
         <div class="lire" data-fiche="${a.id}">
-          <div class="meta">Astuce du jour · ${meta(a)}</div>
           <h2>${echapper(a.titre)}</h2>
           ${a.texte ? `<p class="texte">${echapper(a.texte)}</p>` : ""}
         </div>
@@ -391,7 +410,8 @@ function afficherAccueil() {
   $("liste").innerHTML = !astuces.size ? "" : !liste.length ? `<div class="aucun">Aucun résultat</div>` :
     liste.map(x => `<button class="ligne ${x.connue ? "connue" : ""}" data-fiche="${x.id}">
       <span class="emoji">${echapper(categorie(x.cat).emoji)}</span>
-      <span class="nom">${echapper(x.titre)}</span>
+      <span class="textes"><span class="nom">${echapper(x.titre)}</span>
+        ${x.texte ? `<span class="extrait">${echapper(x.texte.replace(/\s+/g, " "))}</span>` : ""}</span>
       ${x.favori ? icone("star", "plein fav") : ""}
       ${x.connue ? icone("check") : ""}
       ${imageDe(x) ? icone("photo") : ""}
@@ -400,27 +420,34 @@ function afficherAccueil() {
 }
 
 // --- Fiche d'une astuce (mini pop-up) ---
+// Fenêtre au centre (comme Foodix) : vignette de l'image à côté du titre, étiquettes
+// dessous, puis le texte, le lien et les gros boutons. Toucher la vignette affiche
+// l'image en grand, la retoucher la remet en vignette.
 let menuOuvert = false;
+let imageGrande = false;
 function afficherFiche(a) {
-  $("voile").innerHTML = `<div class="fenetre" role="dialog" aria-label="${echapper(a.titre)}">
-    ${htmlImage(a)}
-    <div class="corps">
-      <div class="entete">
-        <div class="meta">${meta(a)}</div>
-        <div class="menu-wrap">
-          <button class="btn-icone" data-action="menu" aria-label="Plus d'actions">${icone("dots")}</button>
-          ${menuOuvert ? `<div class="menu">
-            <button data-modifier="${a.id}">${icone("pencil")}Modifier</button>
-            <button class="danger" data-supprimer="${a.id}">${icone("trash")}Supprimer</button>
-          </div>` : ""}
-        </div>
-        <button class="btn-icone" data-action="fermer" aria-label="Fermer">${icone("x")}</button>
+  const src = imageDe(a);
+  const etiquettes = `<div class="tags"><span class="t">${meta(a)}</span>
+    ${a.favori ? `<span class="t fav">${icone("star", "plein")}Favori</span>` : ""}
+    ${a.connue ? `<span class="t">${icone("check")}Connue</span>` : ""}</div>`;
+  $("voile").className = "voile centre";
+  $("voile").innerHTML = `<div class="fenetre-c fiche" role="dialog" aria-label="${echapper(a.titre)}">
+    ${src && imageGrande ? `<button class="grande-image" data-action="image" aria-label="Réduire l'image"><img src="${echapper(src)}" alt="" onerror="this.remove()"></button>` : ""}
+    <div class="fhd">
+      ${src && !imageGrande ? `<button class="vignette" data-action="image" aria-label="Agrandir l'image"><img src="${echapper(src)}" alt="" onerror="this.remove()"></button>` : ""}
+      <div class="fhd-txt"><h2>${echapper(a.titre)}</h2>${etiquettes}</div>
+      <div class="menu-wrap">
+        <button class="btn-icone" data-action="menu" aria-label="Plus d'actions">${icone("dots")}</button>
+        ${menuOuvert ? `<div class="menu">
+          <button data-modifier="${a.id}">${icone("pencil")}Modifier</button>
+          <button class="danger" data-supprimer="${a.id}">${icone("trash")}Supprimer</button>
+        </div>` : ""}
       </div>
-      <h2>${echapper(a.titre)}</h2>
-      ${a.texte ? `<p class="texte">${echapper(a.texte)}</p>` : ""}
-      ${htmlLien(a)}
-      ${htmlBoutons(a)}
+      <button class="btn-icone" data-action="fermer" aria-label="Fermer">${icone("x")}</button>
     </div>
+    ${a.texte ? `<p class="texte">${echapper(a.texte)}</p>` : ""}
+    ${htmlLien(a)}
+    ${htmlBoutons(a)}
   </div>`;
   $("voile").hidden = false;
 }
@@ -589,11 +616,19 @@ document.addEventListener("click", e => {
   const el = e.target.closest("button, [data-fiche], a");
   if (!el) {
     // Toucher le fond sombre autour d'une fenêtre la ferme
-    if (e.target === $("voile")) retour();
+    // (fond des fiches, ou fond des fenêtres Réglages / Thème / Catégories)
+    if (e.target === $("voile") || e.target.classList.contains("modale")) retour();
     else if (menuOuvert) { menuOuvert = false; router(); }
     return;
   }
   const d = el.dataset;
+
+  // Fiche : la vignette s'agrandit (et se réduit) quand on la touche
+  if (d.action === "image") {
+    const a = astuces.get(location.hash.slice(7));
+    if (a) { imageGrande = !imageGrande; afficherFiche(a); }
+    return;
+  }
 
   if (d.aller) { if (d.aller === "accueil") retour(); else aller(d.aller); return; }
   if (d.fiche) { aller("fiche=" + d.fiche); return; }
@@ -895,5 +930,9 @@ document.addEventListener("visibilitychange", () => {
 });
 
 $("version").textContent = VERSION;
+// Sous le titre : la date du jour, ex. « vendredi 7 novembre » (remise à jour au retour sur l'appli)
+const majDate = () => { $("date-du-jour").textContent = new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }); };
+majDate();
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") majDate(); });
 lirePartage();
 if (MODE_DEMO) demarrerDemo(); else demarrerFirebase();

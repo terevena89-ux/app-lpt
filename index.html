@@ -6,7 +6,7 @@
   <title>LPT</title>
   <meta name="description" content="Mon recueil de trucs et astuces, avec une astuce du jour.">
   <!-- Couleur de la barre du téléphone (mise à jour par le script ci-dessous) -->
-  <meta name="theme-color" content="#f5f4fa">
+  <meta name="theme-color" content="#FBF8F2">
   <script>
     // Thème choisi sur cet appareil (Réglages → Thème) : auto, clair ou sombre.
     // On l'applique AVANT l'affichage de la page, pour éviter un « flash » blanc.
@@ -18,7 +18,7 @@
       function appliquer() {
         var theme = choix === "auto" ? (sombreTel.matches ? "sombre" : "clair") : choix;
         document.documentElement.dataset.theme = theme;
-        document.querySelector('meta[name="theme-color"]').content = theme === "sombre" ? "#171c24" : "#f5f4fa";
+        document.querySelector('meta[name="theme-color"]').content = theme === "sombre" ? "#171c24" : "#FBF8F2";
       }
       appliquer();
       sombreTel.addEventListener("change", appliquer);
@@ -28,6 +28,8 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icones/icone.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icones/icone-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Nunito+Sans:opsz,wght@6..12,400;6..12,700;6..12,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -47,7 +49,7 @@
 <!-- ============ ÉCRAN PRINCIPAL : astuce du jour + recueil ============ -->
 <section id="ecran-accueil" class="ecran" hidden>
   <header class="barre">
-    <h1 class="logo">LPT</h1>
+    <div class="titres"><h1 class="logo">LPT</h1><div class="sous-titre" id="date-du-jour"></div></div>
     <button class="btn-icone" id="btn-ajouter" aria-label="Ajouter une astuce"><svg class="ic"><use href="icones/icones.svg#plus"></use></svg></button>
     <button class="btn-icone" data-aller="reglages" aria-label="Réglages"><svg class="ic"><use href="icones/icones.svg#settings"></use></svg></button>
   </header>
@@ -61,34 +63,31 @@
 </section>
 
 <!-- ============ RÉGLAGES ============ -->
-<section id="ecran-reglages" class="ecran" hidden>
-  <header class="barre">
-    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
-    <h1 class="titre">Réglages</h1>
-  </header>
-  <div class="reglages">
-    <h2>Compte</h2>
+<!-- Réglages, Thème et Catégories : petites fenêtres au centre, posées sur l'écran principal
+     (comme dans Foodix). Toucher le fond sombre autour les ferme. -->
+<section id="ecran-reglages" class="ecran modale" hidden>
+  <div class="fenetre-c" role="dialog" aria-label="Réglages">
+    <div class="fhd"><h2 class="titre">Réglages</h2>
+      <button class="btn-icone" data-aller="accueil" aria-label="Fermer"><svg class="ic"><use href="icones/icones.svg#x"></use></svg></button></div>
+    <div class="sect">Compte</div>
     <div class="groupe">
-      <div class="ligne-r"><span id="compte-info"></span></div>
-      <div class="ligne-r"><span class="synchro"><svg class="ic"><use href="icones/icones.svg#cloud-check"></use></svg><span class="synchro-texte">Synchronisé</span></span></div>
-      <button class="ligne-r cliquable" id="btn-deconnexion"><svg class="ic"><use href="icones/icones.svg#logout"></use></svg><span>Se déconnecter</span></button>
+      <div class="reg"><span id="compte-info" class="resume"></span>
+        <span class="synchro"><svg class="ic"><use href="icones/icones.svg#cloud-check"></use></svg><span class="synchro-texte">Synchronisé</span></span></div>
+      <button class="reg" id="btn-deconnexion"><span>Se déconnecter</span><svg class="ic"><use href="icones/icones.svg#logout"></use></svg></button>
     </div>
-    <h2>Apparence</h2>
+    <div class="sect">Apparence</div>
     <div class="groupe">
-      <button class="ligne-r cliquable" data-aller="theme"><span>Thème</span><span class="valeur" id="theme-actuel"></span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></button>
-      <div class="ligne-r"><span>Animations</span>
-        <div id="choix-animations" class="segments">
+      <button class="reg" data-aller="theme"><span>Thème</span><span class="val"><span id="theme-actuel"></span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></span></button>
+      <div class="reg"><span>Animations</span>
+        <div id="choix-animations" class="seg">
           <button data-anim-choix="completes">Complètes</button>
           <button data-anim-choix="simples">Simples</button>
         </div>
       </div>
+      <button class="reg" data-aller="categories"><span>Catégories</span><span class="val"><span id="resume-categories" class="resume"></span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></span></button>
     </div>
-    <h2>Catégories</h2>
-    <div class="groupe">
-      <button class="ligne-r cliquable" data-aller="categories"><span id="resume-categories" class="resume"></span><span class="valeur">Voir…</span><svg class="ic"><use href="icones/icones.svg#chevron-right"></use></svg></button>
-    </div>
-    <h2>Excel</h2>
-    <div class="groupe deux">
+    <div class="sect">Excel</div>
+    <div class="deux">
       <button class="btn" id="btn-export"><svg class="ic"><use href="icones/icones.svg#download"></use></svg>Exporter</button>
       <button class="btn" id="btn-import"><svg class="ic"><use href="icones/icones.svg#upload"></use></svg>Importer</button>
       <input type="file" id="fichier-import" accept=".xlsx" hidden>
@@ -97,28 +96,22 @@
   </div>
 </section>
 
-<!-- ============ THÈME ============ -->
-<section id="ecran-theme" class="ecran" hidden>
-  <header class="barre">
-    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
-    <h1 class="titre">Thème</h1>
-  </header>
-  <div class="reglages">
+<section id="ecran-theme" class="ecran modale" hidden>
+  <div class="fenetre-c" role="dialog" aria-label="Thème">
+    <button class="retour" data-aller="accueil">‹ Réglages</button>
+    <h2 class="titre">Thème</h2>
     <div id="choix-theme" class="groupe">
-      <button class="ligne-r cliquable" data-theme-choix="auto"><span>Auto</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
-      <button class="ligne-r cliquable" data-theme-choix="clair"><span>Clair</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
-      <button class="ligne-r cliquable" data-theme-choix="sombre"><span>Sombre</span><svg class="ic coche"><use href="icones/icones.svg#check"></use></svg></button>
+      <button class="reg" data-theme-choix="auto"><span>Auto</span><span class="radio"></span></button>
+      <button class="reg" data-theme-choix="clair"><span>Clair</span><span class="radio"></span></button>
+      <button class="reg" data-theme-choix="sombre"><span>Sombre</span><span class="radio"></span></button>
     </div>
   </div>
 </section>
 
-<!-- ============ CATÉGORIES ============ -->
-<section id="ecran-categories" class="ecran" hidden>
-  <header class="barre">
-    <button class="btn-icone" data-aller="accueil" aria-label="Retour"><svg class="ic"><use href="icones/icones.svg#arrow-left"></use></svg></button>
-    <h1 class="titre">Catégories</h1>
-  </header>
-  <div class="reglages">
+<section id="ecran-categories" class="ecran modale" hidden>
+  <div class="fenetre-c" role="dialog" aria-label="Catégories">
+    <button class="retour" data-aller="accueil">‹ Réglages</button>
+    <h2 class="titre">Catégories</h2>
     <div id="liste-categories" class="groupe"></div>
     <button class="btn" id="btn-ajout-categorie"><svg class="ic"><use href="icones/icones.svg#plus"></use></svg>Ajouter</button>
   </div>

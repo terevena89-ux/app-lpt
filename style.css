@@ -1,30 +1,44 @@
 /* =========================================================
-   Apparence de LPT — sobre et compacte, accent bleu lavande.
+   Apparence de LPT — style « carte à piocher » (v0.2.0),
+   de la même famille que Foodix : mêmes polices, lignes serrées,
+   petits boutons peu arrondis. Accent : lavande de l'icône.
    Les couleurs sont des « variables » (--fond, --texte...) :
    le thème sombre « ardoise + pastel » ne fait que les redéfinir.
    ========================================================= */
 
+/* Palette « lavande et crème » (v0.2.0) : les couleurs de l'icône —
+   papier crème, encre bleu nuit pour les titres, lavande, carotte pour les favoris. */
 :root {
-  --fond: #f5f4fa;          /* fond de page, très légèrement lavande */
-  --carte: #ffffff;
-  --texte: #1f1d2b;
-  --discret: #6e6b80;
-  --fin: #e3e1ee;           /* traits fins entre les lignes */
-  --accent: #534AB7;        /* lavande foncé : titres, boutons actifs */
-  --accent-doux: #EEEDFE;   /* lavande très clair : fonds teintés */
-  --accent-trait: #AFA9EC;  /* lavande moyen : bordures */
-  --accent-fonce: #3C3489;  /* texte posé sur le lavande clair */
-  --sur-accent: #ffffff;    /* texte posé sur un bouton plein */
+  --fond: #FBF8F2;          /* papier crème chaud */
+  --carte: #FFFFFF;
+  --creux: #F3EEE4;         /* zones légèrement enfoncées (crème plus soutenu) */
+  --texte: #2B2E3F;
+  --titre: #26304F;         /* encre bleu nuit des titres (comme l'icône) */
+  --discret: #727184;
+  --fin: #ECE6DA;           /* traits fins entre les lignes */
+  --accent: #776CDB;        /* lavande de l'icône : boutons pleins, liens */
+  --accent-doux: #EFECFB;   /* lavande très clair : fonds teintés */
+  --accent-trait: #CFC9EE;  /* lavande moyen : bordures, pointillés */
+  --accent-fonce: #4A40A8;  /* texte posé sur le lavande clair */
+  --sur-accent: #FFF6E6;    /* crème posé sur un bouton lavande */
+  --cadre: #26304F;         /* trait épais de la carte du jour */
+  --ombre-carte: #776CDB;   /* ombre décalée de la carte du jour */
+  --fav: #D9762B;           /* carotte : favoris */
+  --fav-doux: #FBE7D5;
   --danger: #b3261e;
   --ombre: 0 6px 24px rgba(31, 29, 43, .14);
+  --titres: "Bricolage Grotesque", system-ui, sans-serif;
+  --police: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   color-scheme: light;
 }
 
-/* Thème sombre « ardoise + pastel » (même base que Stuff to go) */
+/* Thème sombre « ardoise + pastel » (commun à mes applis) */
 :root[data-theme="sombre"] {
   --fond: #171c24;
   --carte: #1f2531;
+  --creux: #262d3b;
   --texte: #dfe4ec;
+  --titre: #F4EEE2;         /* titres en crème clair */
   --discret: #8b95a7;
   --fin: #2b3342;
   --accent: #ABA6D6;
@@ -32,6 +46,10 @@
   --accent-trait: #4a4f78;
   --accent-fonce: #d6d3f2;
   --sur-accent: #1e1a4a;
+  --cadre: #4a5470;
+  --ombre-carte: #4a4f78;
+  --fav: #E2A47E;
+  --fav-doux: #3A2B26;
   --danger: #f2b8b5;
   --ombre: 0 6px 24px rgba(5, 7, 10, .55);
   color-scheme: dark;
@@ -42,7 +60,7 @@ html, body {
   margin: 0;
   background: var(--fond);
   color: var(--texte);
-  font: 15px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font: 14px/1.38 var(--police);
   -webkit-tap-highlight-color: transparent;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -58,6 +76,9 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 .ic.plein { fill: currentColor; }   /* étoile « favori » remplie */
 
+/* Petit titre en capitales espacées (comme Foodix) */
+.h4 { font: 800 11.5px var(--police); text-transform: uppercase; letter-spacing: .07em; color: var(--discret); }
+
 /* Chaque écran : une colonne centrée (pleine largeur sur le tel) */
 .ecran {
   max-width: 560px;
@@ -70,94 +91,119 @@ input, textarea, select { font: inherit; color: inherit; }
 .barre {
   position: sticky; top: 0; z-index: 5;
   display: flex; align-items: center; gap: 4px;
-  padding: calc(6px + env(safe-area-inset-top)) 8px 6px 12px;
+  padding: calc(8px + env(safe-area-inset-top)) 8px 6px 12px;
   background: var(--fond);
 }
-.logo { flex: 1; margin: 0; font-size: 20px; font-weight: 800; letter-spacing: .5px; color: var(--accent); }
-.titre { flex: 1; margin: 0; font-size: 17px; font-weight: 600; }
+/* Titre + date du jour en petit dessous (comme Foodix) */
+.titres { flex: 1; min-width: 0; }
+.sous-titre { font-size: 12px; color: var(--discret); margin-top: 2px; }
+.sous-titre::first-letter { text-transform: uppercase; }
+.logo { margin: 0; font: 800 21px/1 var(--titres); letter-spacing: -.01em; color: var(--titre); }
+.titre { flex: 1; margin: 0; font: 800 18px/1.15 var(--titres); color: var(--titre); }
 .btn-icone {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 38px; height: 38px; padding: 0;
-  border: 0; border-radius: 10px; background: none; color: var(--discret);
+  width: 36px; height: 36px; padding: 0;
+  border: 0; border-radius: 9px; background: none; color: var(--discret);
 }
-.btn-icone:active { background: var(--accent-doux); }
+.btn-icone:active { background: var(--creux); }
 
 /* ---------- Boutons ---------- */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 38px; padding: 0 12px;
-  border: 1px solid var(--fin); border-radius: 10px;
-  background: var(--carte); font-size: 14px; font-weight: 500;
+  min-height: 36px; padding: 0 12px;
+  border: 1px solid var(--fin); border-radius: 7px;
+  background: var(--carte); font-size: 13px; font-weight: 700; white-space: nowrap;
 }
+.btn .ic { width: 16px; height: 16px; }
 .btn:active { transform: scale(.98); }
 .btn.plein { background: var(--accent); border-color: var(--accent); color: var(--sur-accent); }
 .btn.danger { color: var(--danger); }
-/* Bouton bascule (Favori, Je la connais) : teinté quand il est activé */
+/* Boutons bascule : Favori en carotte (comme Foodix), « Je la connais » en lavande */
 .btn[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent-trait); color: var(--accent-fonce); }
+.btn[data-favori][aria-pressed="true"] { background: var(--fav-doux); border-color: var(--fav); color: var(--fav); }
 
-/* ---------- Astuce du jour ---------- */
+/* ---------- Pioche du jour : une carte de jeu un peu penchée ---------- */
 .jour {
-  margin: 4px 12px 10px;
+  margin: 8px 22px 16px;
   background: var(--carte);
-  border: 1px solid var(--accent-trait);
+  border: 2px solid var(--cadre);
   border-radius: 14px;
+  box-shadow: 4px 4px 0 var(--ombre-carte);
+  transform: rotate(-1.2deg);
   overflow: hidden;
 }
-.jour .image { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--accent-doux); }
-.jour .corps { padding: 9px 12px 11px; }
+/* Bandeau du haut, séparé par une ligne pointillée (comme un ticket détachable) */
+.jour .bandeau {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; background: var(--accent-doux);
+  border-bottom: 1.5px dashed var(--accent-trait);
+}
+.jour .bandeau .h4 { color: var(--accent-fonce); }
+.jour .bandeau .emoji { font-size: 18px; line-height: 1; }
+.jour .image { display: block; width: 100%; height: 150px; object-fit: cover; background: var(--creux); }
+.jour .corps { padding: 10px 12px 12px; }
 .jour .lire { cursor: pointer; }
-.meta { font-size: 12px; color: var(--accent); margin-bottom: 2px; }
-.jour h2 { margin: 0; font-size: 16px; font-weight: 650; line-height: 1.3; }
-.jour .texte { margin: 3px 0 0; color: var(--discret); white-space: pre-line; }
+.jour h2 { margin: 0; color: var(--titre); font: 800 20px/1.15 var(--titres); text-wrap: balance; }
+.jour .texte { margin: 4px 0 0; color: var(--discret); white-space: pre-line; }
 .jour .actions { display: flex; gap: 8px; margin-top: 10px; }
 .jour .actions .btn { flex: 1; }
-.vide { margin: 4px 12px 10px; padding: 18px 12px; text-align: center; color: var(--discret);
-  border: 1px dashed var(--accent-trait); border-radius: 14px; }
+/* La carte se retourne quand on la pioche (animations complètes seulement) */
+[data-anim="completes"] .jour.pioche { animation: piocher .55s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes piocher {
+  from { transform: perspective(700px) rotateY(80deg) rotate(-1.2deg); opacity: 0; }
+  to   { transform: perspective(700px) rotateY(0) rotate(-1.2deg); opacity: 1; }
+}
+.meta { font-size: 12px; font-weight: 700; color: var(--accent-fonce); margin-bottom: 2px; }
+.vide { margin: 8px 12px 12px; padding: 18px 12px; text-align: center; color: var(--discret);
+  border: 1.5px dashed var(--accent-trait); border-radius: 14px; }
 .vide .btn { margin-top: 10px; }
 
 /* Petit lien « domaine du site » (sur la carte du jour et dans la fiche) */
 .lien {
   display: inline-flex; align-items: center; gap: 5px; max-width: 100%;
-  margin-top: 6px; font-size: 13px; color: var(--accent); text-decoration: none;
+  margin-top: 6px; font-size: 13px; font-weight: 700; color: var(--accent-fonce); text-decoration: none;
 }
 .lien span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lien .ic { width: 16px; height: 16px; }
 
 /* ---------- Recherche + filtres ---------- */
 .recherche {
-  display: flex; align-items: center; gap: 6px;
-  margin: 0 12px 8px; padding: 0 10px; height: 36px;
-  background: var(--carte); border: 1px solid var(--fin); border-radius: 10px; color: var(--discret);
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 12px 8px; padding: 0 10px; height: 34px;
+  background: var(--carte); border: 1px solid var(--fin); border-radius: 7px; color: var(--discret);
 }
 .recherche .ic { width: 18px; height: 18px; }
 .recherche input { flex: 1; min-width: 0; height: 100%; border: 0; outline: 0; background: none; color: var(--texte); }
-.filtres { display: flex; gap: 6px; padding: 0 12px 8px; overflow-x: auto; scrollbar-width: none; }
+.filtres { display: flex; gap: 6px; padding: 0 12px 6px; overflow-x: auto; scrollbar-width: none; }
 .filtres::-webkit-scrollbar { display: none; }
 .puce {
   flex: none; display: inline-flex; align-items: center; gap: 4px;
-  height: 28px; padding: 0 10px;
-  border: 1px solid var(--fin); border-radius: 14px; background: var(--carte);
-  font-size: 13px; color: var(--discret); white-space: nowrap;
+  height: 28px; padding: 0 8px;
+  border: 1px solid var(--fin); border-radius: 7px; background: var(--carte);
+  font-size: 12px; font-weight: 700; color: var(--discret); white-space: nowrap;
 }
-.puce .ic { width: 15px; height: 15px; }
-.puce[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent-trait); color: var(--accent-fonce); }
+.puce .ic { width: 14px; height: 14px; }
+.puce[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent); color: var(--accent-fonce); }
 
-/* ---------- Liste du recueil ---------- */
-.liste { margin: 0 12px; background: var(--carte); border: 1px solid var(--fin); border-radius: 12px; overflow: hidden; }
+/* ---------- Liste du recueil : lignes serrées, titre + début du texte ---------- */
+.liste { margin: 0 12px; }
 .liste:empty { display: none; }
 .ligne {
-  display: flex; align-items: center; gap: 8px; width: 100%;
-  min-height: 40px; padding: 7px 10px;
-  border: 0; border-top: 1px solid var(--fin); background: none; text-align: left;
+  display: flex; align-items: center; gap: 9px; width: 100%;
+  min-height: 46px; padding: 6px 0;
+  border: 0; border-bottom: 1px solid var(--fin); background: none; text-align: left;
 }
-.ligne:first-child { border-top: 0; }
-.ligne:active { background: var(--accent-doux); }
-.ligne .emoji { flex: none; width: 22px; text-align: center; }
-.ligne .nom { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.ligne .ic { width: 16px; height: 16px; color: var(--discret); }
-.ligne .ic.fav { color: var(--accent); }
+.ligne:last-child { border-bottom: 0; }
+.ligne:active { background: var(--creux); }
+.ligne .emoji { flex: none; width: 22px; text-align: center; font-size: 16px; }
+.ligne .textes { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ligne .nom { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligne .extrait { font-size: 12px; color: var(--discret); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ligne .ic { width: 15px; height: 15px; color: var(--discret); }
+.ligne .ic.fav { color: var(--fav); }
 .ligne.connue .nom { color: var(--discret); }
 .aucun { padding: 14px; text-align: center; color: var(--discret); font-size: 14px; }
+
 
 /* ---------- Fenêtres (fiche, formulaire) ---------- */
 .voile {
@@ -177,14 +223,46 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 [data-anim="completes"] .fenetre { animation: monte .22s cubic-bezier(.2, .8, .3, 1); }
 @keyframes monte { from { transform: translateY(40px); opacity: 0; } }
-.fenetre .image { display: block; width: 100%; max-height: 260px; object-fit: cover; }
-.fenetre .corps { padding: 10px 14px 14px; }
-.entete { display: flex; align-items: center; gap: 4px; }
-.entete .meta { flex: 1; margin: 0; }
-.fenetre h2 { margin: 2px 0 0; font-size: 18px; font-weight: 650; line-height: 1.3; }
-.fenetre .texte { margin: 6px 0 0; white-space: pre-line; }
-.fenetre .actions { display: flex; gap: 8px; margin-top: 14px; }
-.fenetre .actions .btn { flex: 1; min-height: 44px; }
+
+/* ---------- Fenêtres au centre (fiche, Réglages, Thème, Catégories), comme Foodix ---------- */
+.voile.centre, .modale {
+  position: fixed; inset: 0; z-index: 20;
+  display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(10, 10, 20, .45);
+}
+.modale { min-height: 0; max-width: none; margin: 0; }
+.fenetre-c {
+  width: 100%; max-width: 480px; max-height: calc(100dvh - 32px); overflow-y: auto;
+  background: var(--carte); border-radius: 12px; padding: 12px;
+  display: flex; flex-direction: column; gap: 10px;
+  box-shadow: 0 12px 32px rgb(0 0 0 / .25);
+}
+[data-anim="completes"] .voile.centre, [data-anim="completes"] .modale { animation: apparait .15s ease-out; }
+[data-anim="completes"] .fenetre-c { animation: surgit .18s ease-out; }
+@keyframes apparait { from { opacity: 0; } }
+@keyframes surgit { from { opacity: 0; transform: translateY(10px) scale(.98); } }
+.fenetre-c .titre { flex: 1; margin: 0; font: 800 18px/1.15 var(--titres); color: var(--titre); }
+
+/* En-tête de fenêtre : (vignette) titre + étiquettes, puis ⋯ et ✕ */
+.fhd { display: flex; align-items: flex-start; gap: 10px; }
+.fhd .btn-icone { width: 32px; height: 32px; margin: -4px -4px 0 0; }
+.fhd-txt { flex: 1; min-width: 0; }
+.fiche h2 { margin: 0 0 5px; color: var(--titre); font: 800 19px/1.15 var(--titres); text-wrap: balance; overflow-wrap: anywhere; }
+.fiche .texte { margin: 0; white-space: pre-line; }
+.fiche .lien { margin-top: 0; align-self: flex-start; }
+.fiche .actions { display: flex; gap: 8px; }
+.fiche .actions .btn { flex: 1; min-height: 40px; font-size: 14px; }
+.vignette { flex: none; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 9px; overflow: hidden; background: var(--creux); }
+.vignette img, .grande-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.grande-image { display: block; width: calc(100% + 24px); margin: -12px -12px 0; padding: 0; border: 0; background: var(--creux); max-height: 280px; border-radius: 12px 12px 0 0; overflow: hidden; }
+.grande-image img { max-height: 280px; }
+
+/* Petites étiquettes (catégorie, favori…), comme Foodix */
+.tags { display: flex; flex-wrap: wrap; gap: 4px; }
+.t { display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px;
+  font-size: 11px; font-weight: 800; background: var(--accent-doux); color: var(--accent-fonce); white-space: nowrap; }
+.t .ic { width: 11px; height: 11px; stroke-width: 2.2; }
+.t.fav { background: var(--fav-doux); color: var(--fav); }
 
 /* Menu « ⋯ » (Modifier / Supprimer) */
 .menu-wrap { position: relative; }
@@ -205,7 +283,7 @@ input, textarea, select { font: inherit; color: inherit; }
    les boutons ronds ajoutent catégorie, lien, photo ou image du web. */
 .express { padding: 14px 14px calc(12px + env(safe-area-inset-bottom)); }
 .ex-titre, .ex-texte { outline: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.ex-titre { font-size: 17px; font-weight: 650; line-height: 1.3; min-height: 23px; }
+.ex-titre { color: var(--titre); font-family: var(--titres); font-size: 18px; font-weight: 800; line-height: 1.3; min-height: 23px; }
 .ex-texte { margin-top: 6px; min-height: 44px; max-height: 40dvh; overflow-y: auto; }
 /* Exemple grisé tant que la zone est vide */
 [data-vide]:empty::before { content: attr(data-vide); color: var(--discret); opacity: .75; pointer-events: none; }
@@ -242,31 +320,33 @@ input, textarea, select { font: inherit; color: inherit; }
 .deux > .btn { flex: 1; }
 .erreur { color: var(--danger); font-size: 13px; margin: 0; }
 
-/* ---------- Réglages ---------- */
-.reglages { padding: 0 12px; }
-.reglages h2 { margin: 14px 4px 6px; font-size: 12px; font-weight: 600; color: var(--discret); text-transform: uppercase; letter-spacing: .6px; }
-.groupe { background: var(--carte); border: 1px solid var(--fin); border-radius: 12px; overflow: hidden; }
-.groupe.deux { background: none; border: 0; border-radius: 0; }
-.ligne-r {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  min-height: 44px; padding: 6px 12px;
+/* ---------- Réglages (variante B : les lignes d'une section regroupées dans un bloc) ---------- */
+.sect { font: 800 11px var(--police); text-transform: uppercase; letter-spacing: .07em; color: var(--discret); margin: 6px 0 -4px; }
+.groupe { border: 1px solid var(--fin); border-radius: 8px; background: var(--fond); overflow: hidden; }
+.reg {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  min-height: 40px; padding: 6px 10px;
   border: 0; border-top: 1px solid var(--fin); background: none; text-align: left;
 }
-.ligne-r:first-child { border-top: 0; }
-.ligne-r > span:first-child, .ligne-r > .ic + span { flex: 1; }
-.ligne-r.cliquable:active { background: var(--accent-doux); }
-.ligne-r .valeur { color: var(--discret); }
-.ligne-r .resume { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.ligne-r > .ic:last-child { color: var(--discret); }
-.ligne-r .coche { visibility: hidden; color: var(--accent); }
-.ligne-r[aria-pressed="true"] .coche { visibility: visible; }
-.synchro { display: flex; align-items: center; gap: 8px; color: var(--discret); }
-.synchro.ok { color: var(--accent); }
-.segments { display: flex; border: 1px solid var(--fin); border-radius: 9px; overflow: hidden; }
-.segments button { border: 0; background: none; padding: 5px 10px; font-size: 13px; color: var(--discret); }
-.segments button[aria-pressed="true"] { background: var(--accent-doux); color: var(--accent-fonce); }
-.version { text-align: center; color: var(--discret); font-size: 12px; margin: 18px 0 0; }
-#ecran-categories .btn { margin-top: 10px; width: 100%; }
+.reg:first-child { border-top: 0; }
+button.reg:active { background: var(--creux); }
+.reg .val { display: flex; align-items: center; gap: 6px; min-width: 0; color: var(--discret); font-size: 13px; }
+.reg .ic { width: 16px; height: 16px; color: var(--discret); }
+.resume { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.synchro { display: flex; align-items: center; gap: 5px; flex: none; font-weight: 700; font-size: 12.5px; color: var(--discret); }
+.synchro.ok, .synchro.ok .ic { color: var(--accent); }
+.synchro.attente, .synchro.attente .ic { color: var(--fav); }
+/* Interrupteur gris à deux positions (comme Foodix) */
+.seg { display: flex; gap: 2px; background: var(--creux); padding: 2px; border-radius: 7px; }
+.seg button { border: 0; background: none; padding: 4px 9px; border-radius: 5px; font-size: 12.5px; font-weight: 700; color: var(--discret); }
+.seg button[aria-pressed="true"] { background: var(--carte); color: var(--texte); box-shadow: 0 1px 2px rgb(0 0 0 / .12); }
+/* Choix du thème : petit rond coché */
+.radio { width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2px solid var(--discret); display: grid; place-items: center; }
+.reg[aria-pressed="true"] .radio { border-color: var(--accent); }
+.reg[aria-pressed="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.retour { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--accent-fonce); font-weight: 700; }
+.version { text-align: center; color: var(--discret); font-size: 12px; margin: 0; }
+#ecran-categories .btn { width: 100%; }
 
 /* Ligne d'une catégorie : emoji + nom modifiables, corbeille */
 .ligne-cat { display: flex; align-items: center; gap: 6px; padding: 5px 6px 5px 10px; border-top: 1px solid var(--fin); }
@@ -284,11 +364,11 @@ input, textarea, select { font: inherit; color: inherit; }
 .toast {
   position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 30;
   transform: translateX(-50%);
-  display: flex; align-items: center; gap: 14px;
-  max-width: calc(100% - 24px); padding: 10px 10px 10px 14px;
-  background: #2b2840; color: #fff; border-radius: 12px; box-shadow: var(--ombre); font-size: 14px;
+  display: flex; align-items: center; gap: 12px;
+  max-width: calc(100% - 32px); padding: 8px 14px;
+  background: var(--texte); color: var(--fond); border-radius: 999px; font-weight: 700; font-size: 13.5px;
 }
-.toast button { border: 0; background: none; color: #CECBF6; font-weight: 600; padding: 4px 6px; }
+.toast button { border: 0; background: none; color: var(--accent-trait); font-weight: 800; padding: 0; }
 
 /* Moins d'animations : réglage « Simples » ou réglage du téléphone */
 [data-anim="simples"] *, [data-anim="simples"] *::before { animation: none !important; transition: none !important; }

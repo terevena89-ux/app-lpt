@@ -200,17 +200,40 @@ input, textarea, select { font: inherit; color: inherit; }
 .menu button:active { background: var(--accent-doux); }
 .menu .danger { color: var(--danger); }
 
-/* ---------- Formulaire ---------- */
-.form { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 10px; }
-.form h2 { margin: 0; font-size: 17px; }
-.champ { display: flex; flex-direction: column; gap: 4px; }
-.champ > span { font-size: 12px; color: var(--discret); }
-.form input[type="text"], .form input[type="url"], .form textarea {
-  width: 100%; padding: 8px 10px;
-  border: 1px solid var(--fin); border-radius: 10px; background: var(--fond); outline: 0;
+/* ---------- Panneau « express » (ajouter / modifier) ----------
+   Petit panneau en bas, comme pour écrire un message : on écrit, puis
+   les boutons ronds ajoutent catégorie, lien, photo ou image du web. */
+.express { padding: 14px 14px calc(12px + env(safe-area-inset-bottom)); }
+.ex-titre, .ex-texte { outline: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ex-titre { font-size: 17px; font-weight: 650; line-height: 1.3; min-height: 23px; }
+.ex-texte { margin-top: 6px; min-height: 44px; max-height: 40dvh; overflow-y: auto; }
+/* Exemple grisé tant que la zone est vide */
+[data-vide]:empty::before { content: attr(data-vide); color: var(--discret); opacity: .75; pointer-events: none; }
+.express .erreur { margin-top: 4px; }
+.ex-medias { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.ex-medias:not(:empty) { margin-bottom: 10px; }
+.ex-medias .apercu { width: 100%; }
+.ex-medias .apercu img { max-height: 140px; }
+.ex-lien { max-width: 100%; padding-right: 0; color: var(--accent-fonce); background: var(--accent-doux); border-color: var(--accent-trait); }
+.ex-lien > span { overflow: hidden; text-overflow: ellipsis; }
+.ex-lien .btn-icone { width: 28px; height: 26px; color: inherit; }
+.ex-lien .btn-icone .ic { width: 15px; height: 15px; }
+.ex-panneau:not(:empty) { margin-top: 10px; }
+.ex-panneau input {
+  width: 100%; height: 38px; padding: 0 10px;
+  border: 1px solid var(--accent-trait); border-radius: 10px; background: var(--fond); outline: 0;
 }
-.form input:focus, .form textarea:focus { border-color: var(--accent-trait); }
-.form textarea { min-height: 96px; resize: vertical; }
+.ex-outils { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.ex-outils .espace { flex: 1; }
+.ex-outils .btn.plein { min-height: 40px; padding: 0 18px; border-radius: 20px; }
+.rond {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; padding: 0;
+  border: 1px solid var(--fin); border-radius: 50%; background: var(--carte); color: var(--accent);
+}
+.rond .emoji { font-size: 18px; line-height: 1; }
+.rond[aria-pressed="true"] { background: var(--accent-doux); border-color: var(--accent-trait); }
+.rond:active { transform: scale(.94); }
 .cats { display: flex; flex-wrap: wrap; gap: 6px; }
 .apercu { position: relative; }
 .apercu img { display: block; width: 100%; max-height: 180px; object-fit: cover; border-radius: 10px; }

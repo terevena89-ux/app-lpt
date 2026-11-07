@@ -4,7 +4,7 @@
 // même sans réseau. (Les données, elles, sont gérées par Firebase.)
 // À CHAQUE NOUVELLE VERSION : changer le numéro ci-dessous.
 // =========================================================
-const CACHE = "lpt-v0.1.0";
+const CACHE = "lpt-v0.1.1";
 
 // Fichiers de l'appli à garder dès l'installation
 const FICHIERS = [

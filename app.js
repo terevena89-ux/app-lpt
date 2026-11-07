@@ -25,7 +25,7 @@ import { chargerExcelJS, ajouterFeuille, telechargerClasseur, lireClasseur, lire
 
 // ---------- 1. Réglages de base et données ----------
 
-const VERSION = "v0.1.0";
+const VERSION = "v0.1.1";
 const NOM_APPLI = "app-lpt";   // nom du dossier dans Firestore et des fichiers Excel
 
 // Une astuce = { id, titre, texte, cat, lien, image, photo, favori, connue, vue, cree }
@@ -427,55 +427,103 @@ function afficherFiche(a) {
 
 // --- Formulaire (ajouter / modifier) ---
 // « brouillon » = l'astuce en cours de saisie ; rien n'est enregistré avant « Enregistrer ».
-let formEnCours = null; // { adresse, id (null = nouvelle), brouillon, modeImage }
+// Panneau « express » en bas de l'écran (comme pour écrire un message) :
+//   - le titre et le texte sont des zones d'écriture libres (« contenteditable ») et non des
+//     champs de formulaire : Chrome ne les prend pas pour une fiche d'adresse et ne propose
+//     plus adresses, cartes bancaires ou mots de passe au-dessus du clavier ;
+//   - en dessous, une rangée de boutons ronds : catégorie, lien, photo, image du web.
+//     Toucher un bouton ouvre son petit panneau juste au-dessus ; le retoucher le referme.
+let formEnCours = null; // { adresse, id (null = nouvelle), brouillon, outil: null | "cat" | "lien" | "image" }
 function ouvrirFormulaire(a, adresse, prerempli = {}) {
   const brouillon = a ? { ...a } : normaliserAstuce(null, { cat: filtreCategorie(), ...prerempli });
-  formEnCours = { adresse, id: a ? a.id : null, brouillon, modeImage: !!(brouillon.image && !brouillon.photo) };
-  $("voile").innerHTML = `<div class="fenetre" role="dialog" aria-label="${a ? "Modifier" : "Nouvelle astuce"}">
-    <form class="form" id="form-astuce" novalidate>
-      <div class="entete"><h2 style="flex:1">${a ? "Modifier" : "Nouvelle astuce"}</h2>
-        <button type="button" class="btn-icone" data-action="fermer" aria-label="Fermer">${icone("x")}</button></div>
-      <label class="champ"><span>Titre</span><input type="text" id="f-titre" maxlength="120" value="${echapper(brouillon.titre)}" autocomplete="off"></label>
-      <p class="erreur" id="f-erreur" hidden>Il faut un titre</p>
-      <div class="champ"><span>Catégorie</span><div class="cats" id="f-cats"></div></div>
-      <label class="champ"><span>Texte</span><textarea id="f-texte" maxlength="3000">${echapper(brouillon.texte)}</textarea></label>
-      <label class="champ"><span>Lien</span><input type="url" id="f-lien" value="${echapper(brouillon.lien)}" placeholder="https://…" autocomplete="off"></label>
-      <div class="champ"><span>Image</span><div id="f-image"></div></div>
-      <input type="file" id="f-fichier" accept="image/*" hidden>
-      <div class="deux">
-        <button type="button" class="btn" data-action="fermer">Annuler</button>
-        <button type="submit" class="btn plein">Enregistrer</button>
-      </div>
-    </form>
+  formEnCours = { adresse, id: a ? a.id : null, brouillon, outil: null };
+  // (pas de balise <form> : c'est elle qui réveille le remplissage automatique de Chrome)
+  $("voile").innerHTML = `<div class="fenetre express" role="dialog" aria-label="${a ? "Modifier l'astuce" : "Nouvelle astuce"}">
+    <div id="ex-medias" class="ex-medias"></div>
+    <div id="f-titre" class="ex-titre" contenteditable="plaintext-only" role="textbox" aria-label="Le truc en quelques mots" data-vide="Le truc en quelques mots"></div>
+    <p class="erreur" id="f-erreur" hidden>Il faut quelques mots ici</p>
+    <div id="f-texte" class="ex-texte" contenteditable="plaintext-only" role="textbox" aria-multiline="true" aria-label="Comment on fait" data-vide="Comment on fait…"></div>
+    <div id="ex-panneau" class="ex-panneau"></div>
+    <div class="ex-outils">
+      <button class="rond" data-outil="cat" id="ex-cat" aria-label="Catégorie"></button>
+      <button class="rond" data-outil="lien" aria-label="Lien de la page">${icone("link")}</button>
+      <button class="rond" data-action="photo" aria-label="Prendre ou choisir une photo">${icone("camera")}</button>
+      <button class="rond" data-outil="image" aria-label="Image du web">${icone("photo")}</button>
+      <span class="espace"></span>
+      <button class="btn plein" data-action="enregistrer">${a ? "Enregistrer" : "Ajouter"}</button>
+    </div>
+    <input type="file" id="f-fichier" accept="image/*" hidden>
   </div>`;
+  // Le texte déjà connu est posé tel quel (textContent : aucun risque qu'il soit pris pour du code)
+  $("f-titre").textContent = brouillon.titre;
+  $("f-texte").textContent = brouillon.texte;
   $("voile").hidden = false;
-  afficherCatsForm();
-  afficherImageForm();
+  afficherOutils();
   if (!a) setTimeout(() => $("f-titre").focus(), 50);
 }
 // Nouvelle astuce ajoutée pendant qu'un filtre de catégorie est actif : on reprend cette catégorie
 const filtreCategorie = () => donnees.categories.some(c => c.id === filtre) ? filtre : "";
 
-function afficherCatsForm() {
-  const b = formEnCours.brouillon;
-  $("f-cats").innerHTML = donnees.categories.map(c =>
-    `<button type="button" class="puce" data-f-cat="${echapper(c.id)}" aria-pressed="${b.cat === c.id}">${echapper(c.emoji)} ${echapper(c.nom)}</button>`).join("");
-}
-// Zone « Image » : aperçu (avec croix pour l'enlever), ou les deux façons d'en ajouter une
-function afficherImageForm() {
+// Redessine tout le panneau SAUF les zones d'écriture (pour ne pas perdre le texte tapé)
+function afficherOutils() {
   const f = formEnCours, b = f.brouillon;
-  const src = b.photo || b.image;
-  if (src) {
-    $("f-image").innerHTML = `<div class="apercu"><img src="${echapper(src)}" alt="" onerror="this.style.opacity=.3">
-      <button type="button" class="btn-icone" data-action="sans-image" aria-label="Enlever l'image">${icone("x")}</button></div>`;
-  } else if (f.modeImage) {
-    $("f-image").innerHTML = `<input type="url" id="f-adresse-image" placeholder="Adresse de l'image (https://…)" autocomplete="off">`;
+  // Bouton catégorie : l'emoji de la catégorie choisie, ou une étiquette vide
+  const c = categorie(b.cat);
+  $("ex-cat").innerHTML = c.id ? `<span class="emoji">${echapper(c.emoji)}</span>` : icone("tag");
+  $("ex-cat").setAttribute("aria-pressed", f.outil === "cat" || !!c.id);
+  document.querySelector('[data-outil="lien"]').setAttribute("aria-pressed", f.outil === "lien" || !!lienValide(b.lien));
+  document.querySelector('[data-outil="image"]').setAttribute("aria-pressed", f.outil === "image" || !!b.image);
+  document.querySelector('[data-action="photo"]').setAttribute("aria-pressed", !!b.photo);
+
+  // En haut : aperçu de l'image et du lien, chacun avec sa croix pour l'enlever
+  const src = b.photo || b.image, lien = lienValide(b.lien);
+  $("ex-medias").innerHTML =
+    (src ? `<div class="apercu"><img src="${echapper(src)}" alt="" onerror="this.style.opacity=.3">
+      <button class="btn-icone" data-action="sans-image" aria-label="Enlever l'image">${icone("x")}</button></div>` : "") +
+    (lien && f.outil !== "lien" ? `<span class="puce ex-lien">${icone("external-link")}<span>${echapper(domaine(lien))}</span>
+      <button class="btn-icone" data-action="sans-lien" aria-label="Enlever le lien">${icone("x")}</button></span>` : "");
+}
+
+// Petit panneau de l'outil ouvert (au-dessus de la rangée de boutons)
+function afficherPanneau() {
+  const f = formEnCours, b = f.brouillon;
+  // Champs de lien : type « text » + clavier d'adresse web, sans remplissage automatique
+  const champ = (id, valeur, exemple) => `<input id="${id}" type="text" inputmode="url" autocomplete="off"
+    autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="${exemple}" value="${echapper(valeur)}">`;
+  if (f.outil === "cat") {
+    $("ex-panneau").innerHTML = `<div class="cats">${donnees.categories.map(c =>
+      `<button class="puce" data-f-cat="${echapper(c.id)}" aria-pressed="${b.cat === c.id}">${echapper(c.emoji)} ${echapper(c.nom)}</button>`).join("")}</div>`;
+  } else if (f.outil === "lien") {
+    $("ex-panneau").innerHTML = champ("f-lien", b.lien, "Lien de la page (https://…)");
+    $("f-lien").focus();
+  } else if (f.outil === "image") {
+    $("ex-panneau").innerHTML = champ("f-adresse-image", b.image, "Lien de l'image (https://…)");
     $("f-adresse-image").focus();
   } else {
-    $("f-image").innerHTML = `<div class="deux">
-      <button type="button" class="btn" data-action="photo">${icone("camera")}Photo</button>
-      <button type="button" class="btn" data-action="adresse-image">${icone("link")}Adresse</button></div>`;
+    $("ex-panneau").innerHTML = "";
   }
+}
+function changerOutil(outil) {
+  formEnCours.outil = formEnCours.outil === outil ? null : outil;
+  afficherPanneau();
+  afficherOutils();
+}
+
+// Enregistre le brouillon (bouton « Ajouter » / « Enregistrer »)
+function enregistrerFormulaire() {
+  const f = formEnCours, b = f.brouillon;
+  b.titre = $("f-titre").innerText.replace(/\s+/g, " ").trim().slice(0, 120);
+  if (!b.titre) { $("f-erreur").hidden = false; $("f-titre").focus(); return; }
+  b.texte = $("f-texte").innerText.trim().slice(0, 3000);
+  b.lien = lienValide(b.lien);
+  b.image = b.photo ? "" : lienValide(b.image);
+  if (!f.id) { b.id = nouvelId(); b.cree = Date.now(); }
+  ecrireAstuce(normaliserAstuce(b.id, b));
+  formEnCours = null;
+  // Après un ajout, on revient à l'accueil ; après une modif, à la fiche
+  if (f.id) location.replace("#fiche=" + f.id); else retour();
+  verifierJour(); // la toute première astuce devient l'astuce du jour
+  rafraichir();
 }
 
 // Réduit une photo à 800 px maximum et l'enregistre en JPEG (~100 Ko) :
@@ -581,17 +629,20 @@ document.addEventListener("click", e => {
   if (d.fCat !== undefined && formEnCours) {
     const b = formEnCours.brouillon;
     b.cat = b.cat === d.fCat ? "" : d.fCat;   // retoucher la catégorie choisie l'enlève
-    afficherCatsForm();
+    formEnCours.outil = null;                 // choix fait : le panneau se referme
+    afficherPanneau(); afficherOutils();
     return;
   }
+  if (d.outil && formEnCours) { changerOutil(d.outil); return; }
+  if (d.action === "enregistrer" && formEnCours) { enregistrerFormulaire(); return; }
   if (d.action === "photo") { $("f-fichier").click(); return; }
-  if (d.action === "adresse-image") { formEnCours.modeImage = true; afficherImageForm(); return; }
   if (d.action === "sans-image") {
     Object.assign(formEnCours.brouillon, { photo: "", image: "" });
-    formEnCours.modeImage = false;
-    afficherImageForm();
+    if (formEnCours.outil === "image") afficherPanneau();
+    afficherOutils();
     return;
   }
+  if (d.action === "sans-lien") { formEnCours.brouillon.lien = ""; afficherOutils(); return; }
 
   // Catégories (écran Réglages → Catégories)
   if (d.supprCat) {
@@ -621,17 +672,13 @@ document.addEventListener("change", async e => {
   try {
     formEnCours.brouillon.photo = await reduirePhoto(fichier);
     formEnCours.brouillon.image = "";
-    afficherImageForm();
+    if (formEnCours.outil === "image") { formEnCours.outil = null; afficherPanneau(); }
+    afficherOutils();
   } catch (err) {
     afficherToast("Photo illisible", null);
   }
 });
-// Adresse d'image tapée : on l'affiche dès qu'on quitte le champ
 document.addEventListener("focusout", e => {
-  if (e.target.id === "f-adresse-image" && formEnCours) {
-    const u = lienValide(e.target.value);
-    if (u) { formEnCours.brouillon.image = u; formEnCours.modeImage = false; afficherImageForm(); }
-  }
   // Catégories : enregistrées dès qu'on quitte le champ
   const ligne = e.target.closest?.(".ligne-cat");
   if (ligne) {
@@ -641,25 +688,30 @@ document.addEventListener("focusout", e => {
     if (nom && (nom !== c.nom || emoji !== c.emoji)) { c.nom = nom; c.emoji = emoji; sauverDonnees(); }
   }
 });
-document.addEventListener("input", e => { if (e.target.id === "f-titre") $("f-erreur").hidden = true; });
-
-// Enregistrer le formulaire
-document.addEventListener("submit", e => {
-  if (e.target.id !== "form-astuce") return;
-  e.preventDefault();
-  const f = formEnCours, b = f.brouillon;
-  b.titre = $("f-titre").value.trim();
-  if (!b.titre) { $("f-erreur").hidden = false; $("f-titre").focus(); return; }
-  b.texte = $("f-texte").value.trim();
-  b.lien = lienValide($("f-lien").value);
-  if ($("f-adresse-image")) b.image = lienValide($("f-adresse-image").value) || b.image;
-  if (!f.id) { b.id = nouvelId(); b.cree = Date.now(); }
-  ecrireAstuce(normaliserAstuce(b.id, b));
-  formEnCours = null;
-  // Après un ajout, on revient à l'accueil ; après une modif, à la fiche
-  if (f.id) location.replace("#fiche=" + f.id); else retour();
-  verifierJour(); // la toute première astuce devient l'astuce du jour
-  rafraichir();
+// Pendant la saisie dans le panneau express
+document.addEventListener("input", e => {
+  if (!formEnCours) return;
+  const id = e.target.id, b = formEnCours.brouillon;
+  if (id === "f-titre") $("f-erreur").hidden = true;
+  // Zone d'écriture vidée : on la vide vraiment, pour que l'exemple grisé réapparaisse
+  if ((id === "f-titre" || id === "f-texte") && !e.target.textContent) e.target.innerHTML = "";
+  // Liens : gardés au fur et à mesure (vérifiés à l'enregistrement)
+  if (id === "f-lien") { b.lien = e.target.value.trim(); afficherOutils(); }
+  if (id === "f-adresse-image") {
+    b.image = e.target.value.trim();
+    if (lienValide(b.image)) b.photo = "";   // une image du web remplace la photo
+    afficherOutils();
+  }
+});
+document.addEventListener("keydown", e => {
+  if (!formEnCours) return;
+  // Entrée dans le titre : on passe au texte (le titre tient sur une ligne)
+  if (e.target.id === "f-titre" && e.key === "Enter") { e.preventDefault(); $("f-texte").focus(); }
+  // Entrée dans un champ de lien : on referme le petit panneau
+  if ((e.target.id === "f-lien" || e.target.id === "f-adresse-image") && e.key === "Enter") { e.preventDefault(); changerOutil(formEnCours.outil); }
+  // Sur PC : Ctrl+Entrée enregistre, Échap ferme
+  if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); enregistrerFormulaire(); }
+  if (e.key === "Escape") retour();
 });
 
 // Thème et animations (réglages de cet appareil)

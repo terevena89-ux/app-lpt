@@ -376,7 +376,7 @@ button.reg:active { background: var(--creux); }
 
 /* Petit panneau des listes déroulantes sur téléphone (module champs-mobile.js) :
    il reprend les couleurs de l'appli, et suit donc le thème clair / sombre. */
-.pm-voile { --pm-fond: var(--carte); --pm-texte: var(--texte); --pm-discret: var(--discret); --pm-trait: var(--fin); --pm-accent: var(--accent); --pm-champ: var(--creux); --pm-appui: var(--accent-doux); --pm-police: var(--police); }
+.pm-voile, .ni-ecran { --pm-fond: var(--carte); --pm-texte: var(--texte); --pm-discret: var(--discret); --pm-trait: var(--fin); --pm-accent: var(--accent); --pm-champ: var(--creux); --pm-appui: var(--accent-doux); --pm-police: var(--police); }
 
 /* Titre de section : n'existe que dans le style Journal (voir plus bas) */
 .titre-section { display: none; }

@@ -1,5 +1,8 @@
 # LPT — journal des nouveautés
 
+## 0.3.1 — 2026-11-09
+- Réglages › Notes : bloc-notes libre pour noter mes idées d'amélioration, synchronisé entre le téléphone et le PC, avec un bouton Copier.
+
 ## 0.3.0 — 2026-11-07
 - Nouveau style « Journal » (par défaut), comme le thème Journal de Quoi faire : coins carrés, traits noirs, titres très gras, jaune fluo pour ce qui est choisi.
 - Onglets façon carnet / OneNote : « Tout », « Favoris » et une couleur par catégorie en liseré ; grand titre de la section ouverte. La pioche du jour est dans l'onglet « Tout ».

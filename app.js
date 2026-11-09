@@ -25,7 +25,7 @@ import { chargerExcelJS, ajouterFeuille, telechargerClasseur, lireClasseur, lire
 
 // ---------- 1. Réglages de base et données ----------
 
-const VERSION = "v0.3.0";
+const VERSION = "v0.3.1";
 const NOM_APPLI = "app-lpt";   // nom du dossier dans Firestore et des fichiers Excel
 
 // Une astuce = { id, titre, texte, cat, lien, image, photo, favori, connue, vue, cree }
@@ -106,7 +106,8 @@ function normaliserDonnees(d) {
   const cats = Array.isArray(d.categories) ? d.categories.filter(c => c && c.id) : null;
   return {
     categories: cats ? cats.map(c => ({ id: String(c.id), nom: String(c.nom || ""), emoji: String(c.emoji || "") })) : structuredClone(CATEGORIES_DEPART),
-    jour: d.jour && d.jour.date && d.jour.id ? { date: d.jour.date, id: d.jour.id } : null
+    jour: d.jour && d.jour.date && d.jour.id ? { date: d.jour.date, id: d.jour.id } : null,
+    idees: typeof d.idees === "string" ? d.idees : ""   // Réglages › Notes : idées d'amélioration
   };
 }
 
@@ -205,6 +206,7 @@ function demarrerFirebase() {
         sauverDonnees();
       } else {
         donnees = normaliserDonnees(snap.data());
+        NotesIdees.maj(donnees.idees); // Réglages › Notes : un autre appareil a pu les changer
       }
       chargeDonnees = true;
       verifierJour();
@@ -962,3 +964,9 @@ majDate();
 document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") majDate(); });
 lirePartage();
 if (MODE_DEMO) demarrerDemo(); else demarrerFirebase();
+
+// Réglages › Notes : bloc-notes libre pour mes idées d'amélioration (module notes-idees.js).
+// Enregistré avec les autres données, donc synchronisé entre le téléphone et le PC.
+$("ouvrir-notes").addEventListener("click", () => {
+  NotesIdees.ouvrir(donnees.idees, texte => { donnees.idees = texte; sauverDonnees(); });
+});

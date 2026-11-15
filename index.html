@@ -109,6 +109,10 @@
       <button class="btn" id="btn-import"><svg class="ic"><use href="icones/icones.svg#upload"></use></svg>Importer</button>
       <input type="file" id="fichier-import" accept=".xlsx" hidden>
     </div>
+    <!-- Compteur (nombre d'astuces, photos, poids) et « Tout effacer » : remplis par app.js -->
+    <div class="sect">Données</div>
+    <div id="compteur" class="groupe compteur"></div>
+    <button class="btn danger" id="btn-tout-effacer"><svg class="ic"><use href="icones/icones.svg#trash"></use></svg>Tout effacer</button>
     <p class="version"><span id="version"></span></p>
   </div>
 </section>
@@ -136,6 +140,12 @@
 
 <!-- Fenêtres (fiche d'une astuce, formulaire) : remplies par app.js -->
 <div id="voile" class="voile" hidden></div>
+
+<!-- Image en plein écran (toucher la vignette d'une fiche) : pincer ou double-toucher pour zoomer -->
+<div id="visionneuse" class="visionneuse" hidden>
+  <img id="visionneuse-img" alt="">
+  <button class="btn-icone" data-action="fermer-image" aria-label="Fermer l'image"><svg class="ic"><use href="icones/icones.svg#x"></use></svg></button>
+</div>
 
 <!-- Petit message en bas de l'écran (avec « Annuler » après une suppression) -->
 <div id="toast" class="toast" hidden>

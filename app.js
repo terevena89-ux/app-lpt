@@ -25,7 +25,7 @@ import { chargerExcelJS, ajouterFeuille, telechargerClasseur, lireClasseur, lire
 
 // ---------- 1. Réglages de base et données ----------
 
-const VERSION = "v0.3.1";
+const VERSION = "v0.4.0";
 const NOM_APPLI = "app-lpt";   // nom du dossier dans Firestore et des fichiers Excel
 
 // Une astuce = { id, titre, texte, cat, lien, image, photo, favori, connue, vue, cree }
@@ -312,12 +312,13 @@ function montrer(nom) {
 
 // Les fenêtres (fiche, formulaire) s'ouvrent par-dessus l'accueil
 const fenetreOuverte = () => !$("voile").hidden;
-function fermerVoile() { $("voile").hidden = true; $("voile").innerHTML = ""; $("voile").className = "voile"; formEnCours = null; imageGrande = false; }
+function fermerVoile() { $("voile").hidden = true; $("voile").innerHTML = ""; $("voile").className = "voile"; formEnCours = null; }
 
 function router() {
   if (!MODE_DEMO && !uid) return; // pas encore connecté
   const h = decodeURIComponent(location.hash.slice(1));
   menuOuvert = false;
+  if (!h.startsWith("image=")) fermerVisionneuse();
   if (MODALES.includes(h)) {
     fermerVoile();
     afficherAccueil();
@@ -332,6 +333,10 @@ function router() {
       // (astuce introuvable, ex. juste supprimée : on ferme simplement la fenêtre)
       const a = astuces.get(h.slice(6));
       if (a) afficherFiche(a); else fermerVoile();
+    } else if (h.startsWith("image=")) {
+      // Image en plein écran, posée sur la fiche (le bouton « retour » revient à la fiche)
+      const a = astuces.get(h.slice(6));
+      if (a && imageDe(a)) { afficherFiche(a); ouvrirVisionneuse(imageDe(a)); } else { fermerVisionneuse(); fermerVoile(); }
     } else if (h === "nouvelle" || h.startsWith("modifier=")) {
       // Le formulaire ne se redessine pas si on y est déjà (pour ne pas perdre la saisie)
       if (!formEnCours || formEnCours.adresse !== h) {
@@ -440,20 +445,21 @@ function afficherAccueil() {
 
 // --- Fiche d'une astuce (mini pop-up) ---
 // Fenêtre au centre (comme Foodix) : vignette de l'image à côté du titre, étiquettes
-// dessous, puis le texte, le lien et les gros boutons. Toucher la vignette affiche
-// l'image en grand, la retoucher la remet en vignette.
+// dessous, puis le texte, le lien et les gros boutons. Toucher la vignette ouvre
+// l'image en plein écran.
 let menuOuvert = false;
-let imageGrande = false;
 function afficherFiche(a) {
+  // La fiche est redessinée à chaque action (favori, menu ⋯, synchro…) : si c'est la même
+  // fiche qui est déjà ouverte, on ne rejoue pas l'animation d'ouverture (classe « deja »).
+  const deja = $("voile").querySelector(".fiche")?.dataset.id === a.id;
   const src = imageDe(a);
   const etiquettes = `<div class="tags"><span class="t">${meta(a)}</span>
     ${a.favori ? `<span class="t fav">${icone("star", "plein")}Favori</span>` : ""}
     ${a.connue ? `<span class="t">${icone("check")}Connue</span>` : ""}</div>`;
   $("voile").className = "voile centre";
-  $("voile").innerHTML = `<div class="fenetre-c fiche" role="dialog" aria-label="${echapper(a.titre)}">
-    ${src && imageGrande ? `<button class="grande-image" data-action="image" aria-label="Réduire l'image"><img src="${echapper(src)}" alt="" onerror="this.remove()"></button>` : ""}
+  $("voile").innerHTML = `<div class="fenetre-c fiche ${deja ? "deja" : ""}" data-id="${a.id}" role="dialog" aria-label="${echapper(a.titre)}">
     <div class="fhd">
-      ${src && !imageGrande ? `<button class="vignette" data-action="image" aria-label="Agrandir l'image"><img src="${echapper(src)}" alt="" onerror="this.remove()"></button>` : ""}
+      ${src ? `<button class="vignette" data-action="image" data-id="${a.id}" aria-label="Voir l'image en grand"><img src="${echapper(src)}" alt="" onerror="this.remove()"></button>` : ""}
       <div class="fhd-txt"><h2>${echapper(a.titre)}</h2>${etiquettes}</div>
       <div class="menu-wrap">
         <button class="btn-icone" data-action="menu" aria-label="Plus d'actions">${icone("dots")}</button>
@@ -599,7 +605,25 @@ function afficherReglages() {
   document.querySelectorAll("[data-style-choix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.styleChoix === reglages.style));
   $("resume-categories").textContent = donnees.categories.map(c => c.emoji).join(" ");
   $("btn-deconnexion").hidden = MODE_DEMO;
+  $("compteur").innerHTML = compteurHTML();
   majSynchro();
+}
+// Compteur (comme Médiathèque) : astuces par catégorie, images gardées, poids des données
+// et part de l'espace gratuit de Firebase (1 Go pour Firestore)
+function compteurHTML() {
+  const liste = [...astuces.values()];
+  const sansCat = liste.filter(a => !donnees.categories.some(c => c.id === a.cat)).length;
+  const parCat = donnees.categories.map(c => `${echapper(c.emoji)} ${liste.filter(a => a.cat === c.id).length}`)
+    .concat(sansCat ? [`• ${sansCat}`] : []).join(" · ");
+  const photos = liste.filter(a => a.photo).length, web = liste.filter(a => !a.photo && a.image).length;
+  const octets = new Blob([JSON.stringify({ donnees, astuces: liste })]).size;
+  const poids = octets < 1e6 ? `${Math.max(1, Math.round(octets / 1024))} Ko` : `${(octets / 1048576).toFixed(1).replace(".", ",")} Mo`;
+  const part = octets / (1024 ** 3) * 100;
+  const partTexte = part < 0.1 ? "moins de 0,1 %" : `${part.toFixed(1).replace(".", ",")} %`;
+  return `<div class="reg"><span>Astuces</span><span class="val">${liste.length}</span></div>
+    ${liste.length ? `<div class="reg"><span class="resume">${parCat}</span></div>` : ""}
+    <div class="reg"><span>Images</span><span class="val">${photos} photo${photos > 1 ? "s" : ""} · ${web} du web</span></div>
+    <div class="reg"><span>Poids</span><span class="val">${poids} · ${partTexte} de l'espace gratuit</span></div>`;
 }
 function afficherTheme() {
   document.querySelectorAll("[data-theme-choix]").forEach(b => b.setAttribute("aria-pressed", b.dataset.themeChoix === reglages.theme));
@@ -633,6 +657,8 @@ $("toast-annuler").addEventListener("click", () => {
 
 // Un seul « écouteur » pour tous les clics de la page : on regarde ce qui a été touché
 document.addEventListener("click", e => {
+  // Dans la visionneuse, les touchers sont gérés à part (zoom, double-toucher), sauf la croix
+  if ($("visionneuse").contains(e.target) && !e.target.closest("button")) return;
   const el = e.target.closest("button, [data-fiche], a");
   if (!el) {
     // Toucher le fond sombre autour d'une fenêtre la ferme
@@ -643,12 +669,9 @@ document.addEventListener("click", e => {
   }
   const d = el.dataset;
 
-  // Fiche : la vignette s'agrandit (et se réduit) quand on la touche
-  if (d.action === "image") {
-    const a = astuces.get(location.hash.slice(7));
-    if (a) { imageGrande = !imageGrande; afficherFiche(a); }
-    return;
-  }
+  // Fiche : toucher la vignette ouvre l'image en plein écran ; la croix la referme
+  if (d.action === "image") { aller("image=" + d.id); return; }
+  if (d.action === "fermer-image") { retour(); return; }
 
   if (d.aller) { if (d.aller === "accueil") retour(); else aller(d.aller); return; }
   if (d.fiche) { aller("fiche=" + d.fiche); return; }
@@ -712,6 +735,112 @@ document.addEventListener("click", e => {
 });
 
 $("btn-ajouter").addEventListener("click", () => aller("nouvelle"));
+
+// Réglages › Données › « Tout effacer » : efface toutes les astuces (pour repartir de zéro
+// après mes essais). Les catégories et les notes restent. « Annuler » remet tout.
+$("btn-tout-effacer").addEventListener("click", () => {
+  if (!astuces.size) { afficherToast("Aucune astuce à effacer", null); return; }
+  const n = astuces.size;
+  if (!confirm(`Effacer les ${n} astuce${n > 1 ? "s" : ""} ? Les catégories et les notes restent.`)) return;
+  const avant = [...astuces.values()], avantJour = donnees.jour;
+  effacerAstuces(avant.map(a => a.id));
+  donnees.jour = null;
+  sauverDonnees();
+  router();
+  afficherToast(`${n} astuce${n > 1 ? "s" : ""} effacée${n > 1 ? "s" : ""}`, () => {
+    ecrireAstuces(avant); donnees.jour = avantJour; sauverDonnees(); router();
+  });
+});
+
+// ---------- Visionneuse : image en plein écran ----------
+// Pincer (deux doigts) ou double-toucher pour zoomer, glisser pour se déplacer dans l'image
+// zoomée ; molette sur PC. Un simple toucher (sans zoom), la croix, Échap ou « retour » la ferment.
+const vue = { echelle: 1, x: 0, y: 0, src: "" };
+const pointeurs = new Map();   // doigts posés : id -> { x, y }
+let geste = null;              // geste en cours (point de départ)
+let dernierToucher = 0, minuteurToucher = null;
+function appliquerZoom() {
+  if (vue.echelle <= 1) { vue.echelle = 1; vue.x = vue.y = 0; }
+  $("visionneuse-img").style.transform = `translate(${vue.x}px, ${vue.y}px) scale(${vue.echelle})`;
+}
+function ouvrirVisionneuse(src) {
+  // (redessinée à chaque synchro : on ne remet le zoom à zéro que pour une autre image)
+  if (vue.src !== src) {
+    Object.assign(vue, { src, echelle: 1, x: 0, y: 0 });
+    $("visionneuse-img").src = src;
+    appliquerZoom();
+  }
+  $("visionneuse").hidden = false;
+}
+function fermerVisionneuse() {
+  $("visionneuse").hidden = true; vue.src = ""; pointeurs.clear(); geste = null; clearTimeout(minuteurToucher);
+}
+// Zoome vers « echelle » en gardant fixe le point (px, py) de l'écran
+function zoomerVers(echelle, px, py, depart = vue) {
+  const r = $("visionneuse").getBoundingClientRect();
+  const cx = px - r.left - r.width / 2, cy = py - r.top - r.height / 2;
+  const e = Math.min(5, Math.max(1, echelle));
+  vue.x = cx - (cx - depart.x) * e / depart.echelle;
+  vue.y = cy - (cy - depart.y) * e / depart.echelle;
+  vue.echelle = e;
+  appliquerZoom();
+}
+function debutGeste() {
+  const p = [...pointeurs.values()];
+  geste = p.length >= 2
+    ? { deux: true, dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1, x: vue.x, y: vue.y, echelle: vue.echelle, bouge: true }
+    : { deux: false, px: p[0].x, py: p[0].y, x: vue.x, y: vue.y, echelle: vue.echelle, bouge: geste?.bouge || false };
+}
+const visio = $("visionneuse");
+visio.addEventListener("pointerdown", e => {
+  if (e.target.closest("button")) return;
+  if (!pointeurs.size) geste = null;
+  visio.setPointerCapture?.(e.pointerId);
+  pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  debutGeste();
+});
+visio.addEventListener("pointermove", e => {
+  if (!pointeurs.has(e.pointerId) || !geste) return;
+  pointeurs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  const p = [...pointeurs.values()];
+  if (geste.deux && p.length >= 2) {
+    const dist = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+    zoomerVers(geste.echelle * dist / geste.dist, (p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2, geste);
+  } else if (!geste.deux) {
+    const dx = e.clientX - geste.px, dy = e.clientY - geste.py;
+    if (Math.hypot(dx, dy) > 8) geste.bouge = true;
+    if (vue.echelle > 1) { vue.x = geste.x + dx; vue.y = geste.y + dy; appliquerZoom(); }
+  }
+});
+function finPointeur(e) {
+  if (!pointeurs.has(e.pointerId)) return;
+  pointeurs.delete(e.pointerId);
+  if (pointeurs.size) { debutGeste(); return; }   // il reste un doigt : il continue de déplacer
+  const toucher = geste && !geste.bouge && e.type === "pointerup";
+  geste = null;
+  if (!toucher) return;
+  const maintenant = Date.now(), x = e.clientX, y = e.clientY;
+  if (maintenant - dernierToucher < 300) {
+    // Double-toucher : zoom ×2,5 sur ce point, ou retour à la taille normale
+    clearTimeout(minuteurToucher); dernierToucher = 0;
+    zoomerVers(vue.echelle > 1 ? 1 : 2.5, x, y);
+  } else {
+    dernierToucher = maintenant;
+    // Simple toucher sur l'image pas zoomée : on ferme (après un court délai, au cas où c'est un double)
+    minuteurToucher = setTimeout(() => { if (vue.echelle === 1 && !$("visionneuse").hidden) retour(); }, 300);
+  }
+}
+visio.addEventListener("pointerup", finPointeur);
+visio.addEventListener("pointercancel", finPointeur);
+visio.addEventListener("wheel", e => {
+  e.preventDefault();
+  zoomerVers(vue.echelle * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY);
+}, { passive: false });
+document.addEventListener("keydown", e => {
+  // Échap (PC) : ferme l'image en plein écran, sinon la fiche ouverte (le formulaire a sa propre règle)
+  if (e.key !== "Escape" || formEnCours) return;
+  if (!$("visionneuse").hidden || fenetreOuverte()) retour();
+});
 $("btn-connexion").addEventListener("click", seConnecter);
 $("btn-deconnexion").addEventListener("click", () => {
   if (confirm("Se déconnecter ? Tes astuces restent en sécurité dans ton compte.")) signOut(auth).then(() => location.reload());

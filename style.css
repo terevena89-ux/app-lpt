@@ -239,6 +239,8 @@ input, textarea, select { font: inherit; color: inherit; }
 }
 [data-anim="completes"] .voile.centre, [data-anim="completes"] .modale { animation: apparait .15s ease-out; }
 [data-anim="completes"] .fenetre-c { animation: surgit .18s ease-out; }
+/* Fiche redessinée après une action (favori, menu ⋯…) : pas d'animation rejouée */
+[data-anim="completes"] .fenetre-c.deja { animation: none; }
 @keyframes apparait { from { opacity: 0; } }
 @keyframes surgit { from { opacity: 0; transform: translateY(10px) scale(.98); } }
 .fenetre-c .titre { flex: 1; margin: 0; font: 800 18px/1.15 var(--titres); color: var(--titre); }
@@ -253,9 +255,24 @@ input, textarea, select { font: inherit; color: inherit; }
 .fiche .actions { display: flex; gap: 8px; }
 .fiche .actions .btn { flex: 1; min-height: 40px; font-size: 14px; }
 .vignette { flex: none; width: 56px; height: 56px; padding: 0; border: 0; border-radius: 9px; overflow: hidden; background: var(--creux); }
-.vignette img, .grande-image img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.grande-image { display: block; width: calc(100% + 24px); margin: -12px -12px 0; padding: 0; border: 0; background: var(--creux); max-height: 280px; border-radius: 12px 12px 0 0; overflow: hidden; }
-.grande-image img { max-height: 280px; }
+.vignette img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+/* Visionneuse : image en plein écran, sur fond noir (pincer / double-toucher pour zoomer) */
+.visionneuse {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  background: rgb(0 0 0 / .92); touch-action: none; overflow: hidden;
+}
+.visionneuse[hidden] { display: none; }
+.visionneuse img {
+  width: 100%; height: 100%; object-fit: contain;
+  transform-origin: center; user-select: none; -webkit-user-drag: none; pointer-events: none;
+}
+.visionneuse .btn-icone {
+  position: absolute; top: calc(10px + env(safe-area-inset-top)); right: 10px;
+  width: 42px; height: 42px; background: rgb(0 0 0 / .5); color: #fff;
+}
+[data-anim="completes"] .visionneuse { animation: apparait .15s ease-out; }
 
 /* Petites étiquettes (catégorie, favori…), comme Foodix */
 .tags { display: flex; flex-wrap: wrap; gap: 4px; }
@@ -345,6 +362,7 @@ button.reg:active { background: var(--creux); }
 .reg[aria-pressed="true"] .radio { border-color: var(--accent); }
 .reg[aria-pressed="true"] .radio::after { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 .retour { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--accent-fonce); font-weight: 700; }
+.compteur .resume { color: var(--discret); font-size: 13px; }
 .version { text-align: center; color: var(--discret); font-size: 12px; margin: 0; }
 #ecran-categories .btn { width: 100%; }
 
@@ -383,7 +401,7 @@ button.reg:active { background: var(--creux); }
 
 /* =========================================================
    v0.3.0 : style « Journal » (par défaut), comme le thème Journal de Quoi faire :
-   coins carrés, traits noirs, titres très gras, jaune fluo pour ce qui est choisi,
+   coins carrés, traits noirs, titres très gras, trait épais pour ce qui est choisi (v0.4 : plus de jaune),
    et des onglets façon carnet / OneNote : une couleur par section en liseré.
    Le style « Pioche » (v0.2) reste au choix dans Réglages → Style.
    Tout ce bloc ne s'applique que si la page porte data-style="journal".
@@ -403,10 +421,8 @@ button.reg:active { background: var(--creux); }
   --sur-accent: #FFFFFF;
   --cadre: #14161F;          /* traits noirs */
   --ombre-carte: #776CDB;    /* petite ombre décalée lavande */
-  --jaune: #FFEC3A;          /* jaune fluo : onglet et boutons choisis */
-  --sur-jaune: #14161F;
   --fav: #14161F;
-  --fav-doux: #FFEC3A;
+  --fav-doux: #F4F4F6;
   --titres: "Inter Tight", "Inter", Helvetica, Arial, sans-serif;
   --police: "Inter Tight", "Inter", Helvetica, Arial, sans-serif;
   --serif: "IBM Plex Serif", Georgia, serif;
@@ -427,6 +443,7 @@ button.reg:active { background: var(--creux); }
   --cadre: #F2F1EC;          /* en sombre, les traits deviennent clairs */
   --ombre-carte: #4D4689;
   --fav: #F2F1EC;
+  --fav-doux: #1E2028;
 }
 
 /* Coins carrés partout, sauf les ronds (boutons du panneau d'ajout, choix du thème) */
@@ -450,14 +467,14 @@ button.reg:active { background: var(--creux); }
 /* La pioche du jour ne s'affiche que dans l'onglet « Tout » */
 [data-style="journal"] #ecran-accueil[data-filtre="autre"] #du-jour { display: none; }
 
-/* Onglets : cases collées, liseré de la couleur de la section en haut, onglet choisi en jaune */
+/* Onglets : cases collées, liseré de la couleur de la section en haut, onglet choisi souligné d'un trait épais */
 [data-style="journal"] .filtres { padding: 0; gap: 0; border-bottom: 1px solid var(--cadre); }
 [data-style="journal"] .filtres .puce {
   height: 38px; padding: 0 11px;
   border: 0; border-right: 1px solid var(--cadre); border-top: 4px solid var(--k);
   background: var(--carte); color: var(--texte); font-size: 13px; font-weight: 700;
 }
-[data-style="journal"] .filtres .puce[aria-pressed="true"] { background: var(--jaune); color: var(--sur-jaune); border-top-color: var(--k); }
+[data-style="journal"] .filtres .puce[aria-pressed="true"] { box-shadow: inset 0 -4px 0 var(--cadre); font-weight: 900; }
 
 /* Titre de la section ouverte : très gras, posé sur une barre noire épaisse */
 [data-style="journal"] .titre-section {
@@ -480,17 +497,18 @@ button.reg:active { background: var(--creux); }
 /* Textes courants (extraits, texte de l'astuce) à empattements, comme le Journal */
 [data-style="journal"] .jour .texte, [data-style="journal"] .ligne .extrait, [data-style="journal"] .fiche .texte { font-family: var(--serif); }
 
-/* Boutons : simples contours noirs ; choisi = jaune ; deux boutons côte à côte collés */
+/* Boutons : simples contours noirs ; choisi = trait épais ; deux boutons côte à côte collés */
 [data-style="journal"] .btn { border: 1px solid var(--cadre); background: var(--carte); color: var(--texte); }
-[data-style="journal"] .btn.plein,
+[data-style="journal"] .btn.plein { background: var(--texte); border-color: var(--texte); color: var(--fond); }
 [data-style="journal"] .btn[aria-pressed="true"],
-[data-style="journal"] .btn[data-favori][aria-pressed="true"] { background: var(--jaune); border-color: var(--cadre); color: var(--sur-jaune); }
+[data-style="journal"] .btn[data-favori][aria-pressed="true"] { background: var(--carte); border-color: var(--cadre); color: var(--texte); box-shadow: inset 0 0 0 2px var(--cadre); }
+[data-style="journal"] .btn.danger { color: var(--danger); }
 [data-style="journal"] .actions { gap: 0 !important; }
 [data-style="journal"] .actions .btn + .btn { border-left: 0; }
 
 /* Recherche et liste */
 [data-style="journal"] .recherche { border: 1px solid var(--cadre); }
-[data-style="journal"] .ligne .ic.fav { color: var(--cadre); fill: var(--jaune); }
+[data-style="journal"] .ligne .ic.fav { color: var(--cadre); fill: var(--cadre); }
 
 /* Fenêtres (fiche, Réglages, panneau d'ajout) : trait noir + ombre décalée */
 [data-style="journal"] .fenetre-c, [data-style="journal"] .fenetre { border: 1px solid var(--cadre); box-shadow: 4px 4px 0 var(--ombre-carte); }
@@ -499,9 +517,9 @@ button.reg:active { background: var(--creux); }
 [data-style="journal"] .seg button + button { border-left: 1px solid var(--cadre); }
 [data-style="journal"] .seg button[aria-pressed="true"] { background: var(--texte); color: var(--fond); box-shadow: none; }
 [data-style="journal"] .t { background: var(--creux); color: var(--texte); }
-[data-style="journal"] .t.fav { background: var(--jaune); color: var(--sur-jaune); }
+[data-style="journal"] .t.fav { background: var(--carte); color: var(--texte); box-shadow: inset 0 0 0 2px var(--cadre); }
 [data-style="journal"] .rond { border-color: var(--cadre); color: var(--texte); }
-[data-style="journal"] .rond[aria-pressed="true"] { background: var(--jaune); border-color: var(--cadre); color: var(--sur-jaune); }
+[data-style="journal"] .rond[aria-pressed="true"] { background: var(--carte); border-color: var(--cadre); color: var(--texte); box-shadow: inset 0 0 0 2px var(--cadre); }
 [data-style="journal"] .ex-panneau input { border-color: var(--cadre); }
 [data-style="journal"] .vide { border: 1px dashed var(--cadre); }
-[data-style="journal"] .toast button { color: var(--jaune); }
+[data-style="journal"] .toast button { color: inherit; text-decoration: underline; text-underline-offset: 3px; }

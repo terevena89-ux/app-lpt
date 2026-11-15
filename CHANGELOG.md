@@ -1,5 +1,12 @@
 # LPT — journal des nouveautés
 
+## 0.4.0 — 2026-11-15
+- Réglages › Données : compteur (nombre d'astuces par catégorie, photos et images du web, poids des données et part de l'espace gratuit de Firebase), comme dans Médiathèque.
+- Réglages › Données › « Tout effacer » : efface toutes les astuces (pour repartir de zéro après les essais). Les catégories et les notes restent ; « Annuler » remet tout pendant 5 secondes.
+- Correctif : la fiche ne rejoue plus son animation d'ouverture à chaque action dedans (Favori, Je la connais, menu ⋯).
+- Style Journal : plus de surlignage jaune. Ce qui est choisi (onglet, Favori, Je la connais, boutons ronds du formulaire) est marqué par un trait épais ; les boutons principaux sont en noir plein.
+- Toucher la vignette d'une fiche ouvre l'image en plein écran : pincer ou double-toucher pour zoomer, glisser pour se déplacer, molette sur PC. Un toucher, la croix, Échap ou « retour » la ferment.
+
 ## 0.3.1 — 2026-11-09
 - Réglages › Notes : bloc-notes libre pour noter mes idées d'amélioration, synchronisé entre le téléphone et le PC, avec un bouton Copier.
 
